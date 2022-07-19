@@ -215,7 +215,7 @@ jobs:
           
           mkdir uploadme
           cd dummy
-          GZIP=-n tar -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
+          GZIP=-n tar --sort=name -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
           cp monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
           cd ..
           
