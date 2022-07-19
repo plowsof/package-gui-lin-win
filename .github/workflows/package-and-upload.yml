@@ -97,6 +97,9 @@ jobs:
           git sparse-checkout set "installers\windows"
           git pull origin master
           mkdir installers\windows\bin; cd ..
+          
+          (Get-ChildItem -Path inno\installers\windows\bin –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
+          
           Copy-Item -Path "$($dest)\*" -Destination "inno\installers\windows\bin" -Recurse
           
     - name: "Add version to Monero.iss file"
@@ -119,6 +122,9 @@ jobs:
           mkdir uploadme
 
           cd inno\installers\windows
+          
+          #force modified time
+          (Get-ChildItem -Path bin –Recurse) | % {$_.LastWriteTime = (Get-Date)}
           .\ISCC.exe Monero.iss
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
           Move-Item -Path Output\mysetup.exe -Destination $out
