@@ -110,7 +110,7 @@ jobs:
           $content | Set-Content $file
   
     - name: "Move InnoSetup files to installer dir"
-      run: Copy-Item -Path "helper-scripts\inno_setup\*" -Destination "inno\installers\windows" -Recurse
+      run: Copy-Item -Path "utils\*" -Destination "inno\installers\windows" -Recurse
 
     - name: "Create monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
       run: |
