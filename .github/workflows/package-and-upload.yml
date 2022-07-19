@@ -229,4 +229,4 @@ jobs:
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
       run: |
         cd uploadme
-        scp -r -i ../ssh_key -o StrictHostKeyChecking=no $(pwd) ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
+        scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
