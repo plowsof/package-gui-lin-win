@@ -146,7 +146,7 @@ jobs:
         #New-SFTPItem -SessionId 0 -Path /tmp/${{github.event.inputs.tag}}/gui/packaged -ItemType Directory
         
         #push file
-        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe" -Destination ${{ github.event.inputs.remotedir }} -Verbose
+        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
         Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
 
         
