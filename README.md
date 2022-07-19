@@ -2,7 +2,7 @@
 
 
 requires secrets:
-- `SSH_KEY` - to be generated with TODO
+- `SSH_KEY` - to be generated with TODO - paste the entire contents of the private key file into github secrets
 - `USER`- ssh username
 - `SCP_SERVER` - server ip address e.g. 192.1.0.1
 
