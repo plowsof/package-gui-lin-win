@@ -36,3 +36,8 @@ ssh plowsof@192.1.1.1
 ```
 
 Paste the pub key on a new line inside `~/.ssh/authorized_keys` 
+
+### Run the workflow
+The default values are set to build v0.18.0.0 amd save packaged files to `/tmp` on the remote server. Cusomise this _but the directory/path MUST exist already or the script will error_    
+
+![package](https://user-images.githubusercontent.com/77655812/179846501-00a21098-cda9-4517-b615-28ece442184a.png)
