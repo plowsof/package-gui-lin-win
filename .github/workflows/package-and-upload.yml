@@ -9,6 +9,10 @@ on:
         description: 'Tag version'
         required: true
         default: "v0.18.0.0"
+      remotedir:
+        description: 'remote dir'
+        required: true
+        default: "/tmp"
 
 jobs:
   packageWindows:
@@ -125,14 +129,14 @@ jobs:
     
     - name: "Upload files using SCP"
       run: |
-        $custom_dir = "/tmp/" + "${{ github.event.inputs.tag }}" + "/gui/packaged/"
         Install-Module -Name Posh-SSH -force
-        $keystring = "${{ secrets.OLD_SSH }}"
+        $keystring = "${{ secrets.SSH_KEY }}"
         $computer = "${{ secrets.SCP_SERVER }}"
         $username = "${{ secrets.USER }}"
         $password = "hunter2" | ConvertTo-SecureString -AsPlainText -Force
         $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
-
+        
+        #if wildcards / custom paths are needed to be created, this is an example
         #create remote dir
         #this errors if already exists
         #but there is a way to test this beforehand -> Test-SFTPPath
@@ -142,7 +146,7 @@ jobs:
         #New-SFTPItem -SessionId 0 -Path /tmp/${{github.event.inputs.tag}}/gui/packaged -ItemType Directory
         
         #push file
-        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme -Destination /tmp -Verbose
+        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme -Destination ${{ github.event.inputs.remotedir }} -Verbose
   
   packageLinux:
     runs-on: ubuntu-latest
@@ -214,8 +218,9 @@ jobs:
           
           ls uploadme/*
           
-          echo "${{ secrets.OLD_SSH }}" | tee ssh_key
+          echo "${{ secrets.SSH_KEY }}" | tee ssh_key
           sudo chmod 600 ssh_key
           #if scp remote-host:~/myfile ./ >&/dev/null ; then echo "transfer OK" ; else echo "transfer failed" ; fi
+          
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
-      run: scp -r -i ./ssh_key -o StrictHostKeyChecking=no "./uploadme" ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:/tmp
+      run: scp -r -i ./ssh_key -o StrictHostKeyChecking=no "./uploadme" ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
