@@ -29,8 +29,7 @@ jobs:
     - name: "Verify Inno Setup file hashes"
       run: |
           #Known hashes ~ files installed from innosetup-6.2.1.exe
-          $path_inno_files = "helper-scripts\inno_setup"
-          #assume opengl file is in homedir
+          $path_inno_files = "utils\"
           #wrong hash test
           if (-Not ((Get-FileHash $path_inno_files\Default.isl).hash -eq "179da3422d7bbb65bb2052f9c0b370ab66ddd6f24693d90accbd7d7d73d4f1a4")){ Exit 1 }
           if (-Not ((Get-FileHash $path_inno_files\ISCC.exe).hash -eq "0d02e30a6ad432a50eb86f1ecf330147046e671de340bcb43a170fecbd19bf51")){ Exit 1 }
@@ -40,7 +39,7 @@ jobs:
           if (-Not ((Get-FileHash $path_inno_files\Setup.e32).hash -eq "088622096c373250d04e46de5cda072a921a89900c57988bbe52f1e308e48043")){ Exit 1 }
           if (-Not ((Get-FileHash $path_inno_files\SetupLdr.e32).hash -eq "86154d725c21660f220e957eb6dcaf73ca609eef486dcdce6d5d7c286abd03d5")){ Exit 1 }
           if (-Not ((Get-FileHash $path_inno_files\ISPP.dll).hash -eq "1be06b60090221d7a7d236d374ab4ff7e6a56013107f806be4bea2b79dad3703")){ Exit 1 }
-          if (-Not ((Get-FileHash opengl32sw.dll).hash -eq "963641a718f9cae2705d5299eae9b7444e84e72ab3bef96a691510dd05fa1da4")){ Exit 1 }
+          if (-Not ((Get-FileHash utils\opengl32sw.dll).hash -eq "963641a718f9cae2705d5299eae9b7444e84e72ab3bef96a691510dd05fa1da4")){ Exit 1 }
     
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
@@ -79,7 +78,7 @@ jobs:
           $dest = "dummy\monero-gui-" + $TAG 
           Move-Item -Path monero-gui-wallet-guide.pdf -Destination $dest
           Move-Item -Path frombuild\monero-wallet-gui.exe -Destination $dest
-          Move-Item -Path opengl32sw.dll -Destination $dest
+          Move-Item -Path utils\opengl32sw.dll -Destination $dest
           Move-Item -path start-low-graphics-mode.bat -Destination $dest
           
           Get-ChildItem -Path "$($HEAD)\*" -Recurse | Move-Item -Destination "dummy\monero-gui-$($TAG)\extras"
