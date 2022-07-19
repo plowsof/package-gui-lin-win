@@ -222,5 +222,7 @@ jobs:
           sudo chmod 600 ssh_key
           #if scp remote-host:~/myfile ./ >&/dev/null ; then echo "transfer OK" ; else echo "transfer failed" ; fi
           
+          #scp does not allow "."
+          cd uploadme
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
-      run: scp -r -i ./ssh_key -o StrictHostKeyChecking=no "./uploadme/." ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
+      run: scp -r -i ./ssh_key -o StrictHostKeyChecking=no $(pwd) ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
