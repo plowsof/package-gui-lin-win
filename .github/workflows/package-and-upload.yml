@@ -100,7 +100,7 @@ jobs:
           
           (Get-ChildItem -Path inno\installers\windows –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
           
-          (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime)
+          (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
           
           Copy-Item -Path "$($dest)\*" -Destination "inno\installers\windows\bin" -Recurse
           
