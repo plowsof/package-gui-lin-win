@@ -113,7 +113,9 @@ jobs:
           $content[12] = "TouchDate=2004-01-31 `n"
           
           $content | Set-Content $file
-  
+          
+          type $file
+          
     - name: "Move InnoSetup files to installer dir"
       run: Copy-Item -Path "utils\*" -Destination "inno\installers\windows" -Recurse
 
