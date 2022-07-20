@@ -109,6 +109,9 @@ jobs:
           $content = Get-Content $file
           $new_str = '#define GuiVersion "' + $strip_v + '"'
           $content[3] = $new_str
+          
+          $content[12] = "TouchDate=2004-01-31 `n"
+          
           $content | Set-Content $file
   
     - name: "Move InnoSetup files to installer dir"
