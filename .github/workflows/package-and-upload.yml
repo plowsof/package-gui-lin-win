@@ -132,14 +132,14 @@ jobs:
           $inno_cc = "ISCC.exe"
           $HOMEDIR = Get-Location
           $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
-
+          
+          mkdir uploadme      
+          
           cd inno\installers\windows
           
           (Get-ChildItem -Path . –Recurse) | % {$_.LastWriteTime = $lastModifiedDate.tostring()}
           (Get-ChildItem -Path . –Recurse) | Foreach {$_.LastWriteTime}
 
-          mkdir uploadme
-          cd inno\installers\windows          
           
           .\ISCC.exe Monero.iss
           
