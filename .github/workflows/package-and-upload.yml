@@ -112,7 +112,7 @@ jobs:
           
           $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
           $CharArray = $lastModifiedDate.tostring().Split(" ")
-          $date = $CharArray[0].replace("/","-")
+          $date = $lastModifiedDate.ToString("yyyy-MM-dd")
           $time = $CharArray[1]
 
           $content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
