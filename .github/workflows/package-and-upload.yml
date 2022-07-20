@@ -100,7 +100,7 @@ jobs:
           
           (Get-ChildItem -Path inno\installers\windows\bin –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
           
-          dir inno\installers\windows\bin\
+          dir /S inno\installers\windows\bin\
           
           Copy-Item -Path "$($dest)\*" -Destination "inno\installers\windows\bin" -Recurse
           
@@ -137,7 +137,7 @@ jobs:
       run: |
         (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
         
-        dir dummy\
+        dir /S dummy\
         
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
     
