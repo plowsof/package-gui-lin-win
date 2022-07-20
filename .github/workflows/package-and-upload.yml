@@ -98,7 +98,7 @@ jobs:
           git pull origin master
           mkdir installers\windows\bin; cd ..
           
-          (Get-ChildItem -Path inno\installers\windows\bin –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
+          (Get-ChildItem -Path inno\installers\windows –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
           
           dir -Recurse inno\installers\windows\bin\
           
