@@ -114,7 +114,9 @@ jobs:
           $date = $lastModifiedDate.ToString("yyyy-MM-dd")
           $time = $lastModifiedDate.ToString("HH:mm")
 
-          $content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
+          #$content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
+
+          $content[12] = "TouchDate=none `nTouchTime=none `nCompression=none"
           
           # test
           $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
@@ -129,12 +131,24 @@ jobs:
       run: |
           $inno_cc = "ISCC.exe"
           $HOMEDIR = Get-Location
+          $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
+
+          cd inno\installers\windows
+          
+          (Get-ChildItem -Path . –Recurse) | % {$_.LastWriteTime = $lastModifiedDate.tostring()}
+          (Get-ChildItem -Path . –Recurse) | Foreach {$_.LastWriteTime}
+
           mkdir uploadme
           cd inno\installers\windows          
+          
           .\ISCC.exe Monero.iss
+          
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
+          
           sha256sum Output\mysetup.exe
+          
           Move-Item -Path Output\mysetup.exe -Destination $out
+          
           cd $HOMEDIR.tostring()
   
     - name: "Create monero-gui-win-x64-${{ github.event.inputs.tag }}.zip"
@@ -156,17 +170,8 @@ jobs:
         $username = "${{ secrets.USER }}"
         $password = "hunter2" | ConvertTo-SecureString -AsPlainText -Force
         $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
-        
-        #if wildcards / custom paths are needed to be created, this is an example
-        #create remote dir
-        #this errors if already exists
-        #but there is a way to test this beforehand -> Test-SFTPPath
-        #New-SFTPSession -ComputerName $computer -Credential $credential -KeyString $keystring -AcceptKey -Verbose
-        #New-SFTPItem -SessionId 0 -Path /tmp/${{github.event.inputs.tag}} -ItemType Directory
-        #New-SFTPItem -SessionId 0 -Path /tmp/${{github.event.inputs.tag}}/gui -ItemType Directory
-        #New-SFTPItem -SessionId 0 -Path /tmp/${{github.event.inputs.tag}}/gui/packaged -ItemType Directory
-        
-        #push file
+      
+        #should be a for loop / some recursive thing
         Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
         Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
 
