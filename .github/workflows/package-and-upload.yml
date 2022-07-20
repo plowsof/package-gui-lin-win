@@ -110,7 +110,7 @@ jobs:
           $new_str = '#define GuiVersion "' + $strip_v + '"'
           $content[3] = $new_str
           
-          $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00"
+          $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00 `nCompression=none"
           
           # test
           $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
