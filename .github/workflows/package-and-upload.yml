@@ -114,7 +114,9 @@ jobs:
           $date = $lastModifiedDate.ToString("yyyy-MM-dd")
           $time = $lastModifiedDate.ToString("HH:mm")
 
-          $content[12] = "TouchDate=none `nTouchTime=none"
+          #$content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
+
+          $content[12] = "TouchDate=none `nTouchTime=none `nCompression=none"
           
           # test
           $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
@@ -239,7 +241,7 @@ jobs:
           
           mkdir uploadme
           cd dummy
-          GZIP=-n tar --sort=name --mtime=@0 -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
+          GZIP=-n tar --sort=name --mtime=monero-gui-${TAG}/monero-wallet-gui -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
           cp monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
           cd ..
           
