@@ -98,11 +98,8 @@ jobs:
           git pull origin master
           mkdir installers\windows\bin; cd ..
           
-          (Get-ChildItem -Path inno\installers\windows –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
-          
-          (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
-          
           Copy-Item -Path "$($dest)\*" -Destination "inno\installers\windows\bin" -Recurse
+
           
     - name: "Add version to Monero.iss file"
       run: |
@@ -125,6 +122,9 @@ jobs:
 
           cd inno\installers\windows
           
+          (Get-ChildItem -Path . –Recurse) | % {$_.LastWriteTime = '01/11/2005 06:01:36'}
+          (Get-ChildItem -Path . –Recurse) | Foreach {$_.LastWriteTime}
+          
           .\ISCC.exe Monero.iss
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
           
@@ -135,8 +135,7 @@ jobs:
   
     - name: "Create monero-gui-win-x64-${{ github.event.inputs.tag }}.zip"
       run: |
-        (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
-        
+        (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = '01/11/2005 06:01:36'}
         (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
         
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
