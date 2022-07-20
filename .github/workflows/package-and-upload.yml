@@ -139,7 +139,9 @@ jobs:
         (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
         
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
-    
+        
+        sha256sum uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
+        
     - name: "Upload files using SCP"
       run: |
         Install-Module -Name Posh-SSH -force
