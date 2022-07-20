@@ -113,7 +113,7 @@ jobs:
           $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00"
           
           # test
-          $content[75] = '12345'
+          $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $content | Set-Content $file
           
           type $file
