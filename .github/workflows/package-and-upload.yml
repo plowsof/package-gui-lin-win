@@ -125,20 +125,8 @@ jobs:
           (Get-ChildItem -Path . –Recurse) | % {$_.LastWriteTime = '01/11/2005 06:01:36'}
           (Get-ChildItem -Path . –Recurse) | Foreach {$_.LastWriteTime}
           
-          $RootFolder = "C:\Users\RUNNER~1\AppData\Local\Temp" # can be multiple folders like "d:\test1","\\host1\share1\folder1"
-          $Folders = (Get-ChildItem -Path $RootFolder -Directory -Force -Recurse).FullName
-          $Folders += $RootFolder
-          $ACLs = Get-Acl -path $Folders
-          Foreach($ACL in $ACLs) { 
-              $Folder = Convert-Path $ACL.PsPath
-              Foreach($Access in $ACL.access) { 
-                  Foreach($Value in $Access.IdentityReference.Value) { 
-                      $ACL.RemoveAccessRule($Access) | Out-Null 
-                  } 
-              } 
-              Set-Acl -path $Folder -aclObject $ACL
-          }
-           
+          Remove-Item –path C:\Users\RUNNER~1\AppData\Local –recurse -force
+          
           .\ISCC.exe Monero.iss
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
           
