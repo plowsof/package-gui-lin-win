@@ -116,7 +116,7 @@ jobs:
 
           #$content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
 
-          $content[12] = "TouchDate=none `nTouchTime=none `nCompression=none"
+          $content[12] = "TouchDate=none `nTouchTime=none"
           
           # test
           $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
