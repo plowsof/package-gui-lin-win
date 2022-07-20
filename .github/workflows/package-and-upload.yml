@@ -81,7 +81,7 @@ jobs:
           
           $dest = "dummy\monero-gui-" + $TAG 
           Move-Item -Path monero-gui-wallet-guide.pdf -Destination $dest
-          Move-Item -Path frombuild\monero-wallet-gui.exe -Destination $dest
+          Copy-Item -Path frombuild\monero-wallet-gui.exe -Destination $dest
           Move-Item -Path utils\opengl32sw.dll -Destination $dest
           Move-Item -path start-low-graphics-mode.bat -Destination $dest
           
@@ -110,15 +110,15 @@ jobs:
           $new_str = '#define GuiVersion "' + $strip_v + '"'
           $content[3] = $new_str
           
-          #needs to be same as monero gui
-          $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00"
+          $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
+          Write-Debug "hello world " + $lastModifiedDate
+          
+          $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00 `nCompression=none"
           
           # test
           $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $content | Set-Content $file
-          
-          type $file
-          
+
     - name: "Move InnoSetup files to installer dir"
       run: Copy-Item -Path "utils\*" -Destination "inno\installers\windows" -Recurse
 
@@ -127,14 +127,10 @@ jobs:
           $inno_cc = "ISCC.exe"
           $HOMEDIR = Get-Location
           mkdir uploadme
-
-          cd inno\installers\windows
-          
+          cd inno\installers\windows          
           .\ISCC.exe Monero.iss
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
-          
           sha256sum Output\mysetup.exe
-          
           Move-Item -Path Output\mysetup.exe -Destination $out
           cd $HOMEDIR.tostring()
   
