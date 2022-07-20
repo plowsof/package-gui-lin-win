@@ -124,8 +124,7 @@ jobs:
           
           (Get-ChildItem -Path . –Recurse) | % {$_.LastWriteTime = '01/11/2005 06:01:36'}
           (Get-ChildItem -Path . –Recurse) | Foreach {$_.LastWriteTime}
-          
-          Remove-Item –path C:\Users\RUNNER~1\AppData\Local\Temp –Recurse -force
+
           
           .\ISCC.exe Monero.iss
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
