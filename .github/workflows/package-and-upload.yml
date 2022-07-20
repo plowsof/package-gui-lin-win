@@ -161,7 +161,10 @@ jobs:
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
         
         sha256sum uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
-        
+    - name: "Print hashes"
+      run: |
+        cd uploadme
+        sha256sum *
     - name: "Upload files using SCP"
       run: |
         Install-Module -Name Posh-SSH -force
@@ -252,6 +255,10 @@ jobs:
           #if scp remote-host:~/myfile ./ >&/dev/null ; then echo "transfer OK" ; else echo "transfer failed" ; fi
           
           #scp does not allow "."
+    - name: "Print hashes"
+      run: |
+        cd uploadme
+        sha256sum *
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
       run: |
         cd uploadme
