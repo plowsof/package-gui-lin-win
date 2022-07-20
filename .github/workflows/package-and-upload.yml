@@ -113,10 +113,7 @@ jobs:
           $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00"
           
           # test
-          $content[76] = ""
-          $content[206] = ""
-          $content[207] = ""
-          $content[76] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          $content[75] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $content | Set-Content $file
           
           type $file
