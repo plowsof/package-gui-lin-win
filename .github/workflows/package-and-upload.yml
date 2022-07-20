@@ -111,13 +111,17 @@ jobs:
           $content[3] = $new_str
           
           $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
-          Write-Debug $lastModifiedDate
-          
-          $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00 `nCompression=none"
+          $CharArray = $lastModifiedDate.Split(" ")
+          $date = $CharArray[0]
+          $time = $CharArray[1]
+
+          $content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
           
           # test
           $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $content | Set-Content $file
+
+          type $file
 
     - name: "Move InnoSetup files to installer dir"
       run: Copy-Item -Path "utils\*" -Destination "inno\installers\windows" -Recurse
