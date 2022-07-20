@@ -112,7 +112,7 @@ jobs:
           
           $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
           $CharArray = $lastModifiedDate.tostring().Split(" ")
-          $date = $CharArray[0]
+          $date = $CharArray[0].replace("/","-")
           $time = $CharArray[1]
 
           $content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
@@ -141,8 +141,8 @@ jobs:
     - name: "Create monero-gui-win-x64-${{ github.event.inputs.tag }}.zip"
       run: |
         $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
-        (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = $lastModifiedDate}
-        
+        (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = $lastModifiedDate.tostring()}
+
         (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
         
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
