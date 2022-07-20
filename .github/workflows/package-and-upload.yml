@@ -100,6 +100,8 @@ jobs:
           
           (Get-ChildItem -Path inno\installers\windows\bin –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
           
+          dir inno\installers\windows\bin\
+          
           Copy-Item -Path "$($dest)\*" -Destination "inno\installers\windows\bin" -Recurse
           
     - name: "Add version to Monero.iss file"
@@ -123,15 +125,21 @@ jobs:
 
           cd inno\installers\windows
           
-          #force modified time
-          (Get-ChildItem -Path bin –Recurse) | % {$_.LastWriteTime = (Get-Date)}
           .\ISCC.exe Monero.iss
           $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
+          
+          sha256sum Output\mysetup.exe
+          
           Move-Item -Path Output\mysetup.exe -Destination $out
           cd $HOMEDIR.tostring()
   
     - name: "Create monero-gui-win-x64-${{ github.event.inputs.tag }}.zip"
-      run: Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
+      run: |
+        (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = '01/01/1970'}
+        
+        dir dummy\
+        
+        Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
     
     - name: "Upload files using SCP"
       run: |
