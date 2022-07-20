@@ -112,6 +112,10 @@ jobs:
           
           $content[12] = "TouchDate=2004-01-31 `nTouchTime=13:00"
           
+          # test
+          $content[76] = ""
+          $content[206] = ""
+          $content[207] = ""
           $content | Set-Content $file
           
           type $file
