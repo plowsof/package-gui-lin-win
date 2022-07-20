@@ -116,6 +116,7 @@ jobs:
           $content[76] = ""
           $content[206] = ""
           $content[207] = ""
+          $content[76] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $content | Set-Content $file
           
           type $file
