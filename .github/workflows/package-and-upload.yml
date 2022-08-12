@@ -244,7 +244,7 @@ jobs:
           
           mkdir uploadme
           cd dummy
-          MTIME_GUI=$(stat -c '%Y' monero-gui-${TAG}/monero-wallet-gui)
+          MTIME_GUI=$(stat -c %y monero-gui-${TAG}/monero-wallet-gui)
           GZIP=-n tar --sort=name --mtime=${MTIME_GUI} -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
           cp monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
           cd ..
