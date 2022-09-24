@@ -110,7 +110,14 @@ jobs:
           # string replace these 2 lines
           # #define GuiVersion GetFileVersion("bin\monero-wallet-gui.exe")
           # Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion
-
+          $num = 0
+          foreach($line in Get-Content $file) {
+              if($line == "[Setup]"){
+                  # Work here
+                  print $num
+              }
+              $num += 1
+          }
           $new_str = '#define GuiVersion "' + $strip_v + '"'
           $repl_1 = '#define GuiVersion GetFileVersion\("bin\monero-wallet-gui.exe")'
           ((Get-Content -path $file -Raw) -replace \"$repl_1\",\"$new_str\") | Set-Content -Path $file
