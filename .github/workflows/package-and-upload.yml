@@ -113,11 +113,11 @@ jobs:
 
           $new_str = '#define GuiVersion "' + $strip_v + '"'
           $repl_1 = '#define GuiVersion GetFileVersion("bin\monero-wallet-gui.exe")'
-          ((Get-Content -path $file -Raw) -replace '$repl_1','$new_str') | Set-Content -Path $file
+          ((Get-Content -path $file -Raw) -replace "$repl_1","$new_str") | Set-Content -Path $file
           
           $new_str = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $repl_2 = 'Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion'
-          ((Get-Content -path $file -Raw) -replace '$repl_2','$new_str') | Set-Content -Path $file
+          ((Get-Content -path $file -Raw) -replace "$repl_2","$new_str") | Set-Content -Path $file
 
           $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
           $date = $lastModifiedDate.ToString("yyyy-MM-dd")
@@ -127,7 +127,7 @@ jobs:
 
           $new_str = "\[Setup\]"
           $repl_3 = "\[Setup\] `nTouchDate=none `nTouchTime=none"
-          ((Get-Content -path $file -Raw) -replace '\[Setup\]','$repl_3') | Set-Content -Path $file
+          ((Get-Content -path $file -Raw) -replace '\[Setup\]',"$repl_3") | Set-Content -Path $file
 
           type $file
 
