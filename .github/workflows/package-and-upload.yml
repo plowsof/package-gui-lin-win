@@ -125,8 +125,8 @@ jobs:
 
           #$content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
 
-          $new_str = [Setup]"
-          $repl_3 = "[Setup] `nTouchDate=none `nTouchTime=none"
+          $new_str = "\[Setup\]"
+          $repl_3 = "\[Setup\] `nTouchDate=none `nTouchTime=none"
           ((Get-Content -path $file -Raw) -replace $repl_3,$new_str) | Set-Content -Path $file
 
           type $file
