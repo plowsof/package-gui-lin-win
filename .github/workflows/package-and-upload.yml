@@ -127,7 +127,7 @@ jobs:
 
           $new_str = "\[Setup\]"
           $repl_3 = "\[Setup\] `nTouchDate=none `nTouchTime=none"
-          ((Get-Content -path $file -Raw) -replace '[Setup]','Testing') | Set-Content -Path $file
+          ((Get-Content -path $file -Raw) -replace '\[Setup\]','Testing') | Set-Content -Path $file
 
           type $file
 
