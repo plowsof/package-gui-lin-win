@@ -4,11 +4,11 @@ on:
       guifile:
         description: 'run id'     
         required: true
-        default: "2680356377"
+        default: "3078884796"
       tag:
         description: 'Tag version'
         required: true
-        default: "v0.18.0.0"
+        default: "v0.18.1.1"
       remotedir:
         description: 'remote dir'
         required: true
@@ -127,7 +127,7 @@ jobs:
 
           $new_str = "\[Setup\]"
           $repl_3 = "\[Setup\] `nTouchDate=none `nTouchTime=none"
-          ((Get-Content -path $file -Raw) -replace '\[Setup\]','Testing') | Set-Content -Path $file
+          ((Get-Content -path $file -Raw) -replace '\[Setup\]','$repl_3') | Set-Content -Path $file
 
           type $file
 
