@@ -112,7 +112,7 @@ jobs:
           # Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion
 
           $new_str = '#define GuiVersion "' + $strip_v + '"'
-          $repl_1 = "\#define GuiVersion GetFileVersion("bin\monero-wallet-gui.exe")\"
+          $repl_1 = "\#define GuiVersion GetFileVersion\("bin\monero-wallet-gui.exe"\)\"
           ((Get-Content -path $file -Raw) -replace "$repl_1","$new_str") | Set-Content -Path $file
           
           $new_str = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
