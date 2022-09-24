@@ -1,3 +1,6 @@
+##
+## expects this repo to be cloned next to it utils/ folder
+##
 RUN_ID="3078884796"
 GH_KEY="hunter2"
 rm -rf clifiles
