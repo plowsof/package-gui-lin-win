@@ -107,21 +107,37 @@ jobs:
           $file = 'inno\installers\windows\Monero.iss'
           $strip_v = $TAG.substring(1,$TAG.length - 1)
           $content = Get-Content $file
-          $new_str = '#define GuiVersion "' + $strip_v + '"'
-          $content[3] = $new_str
+          # string replace these 2 lines
+          # #define GuiVersion GetFileVersion("bin\monero-wallet-gui.exe")
+          # Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion
+          # find [Setup] and append our settings
+          $num = 0
+          $read = -1
+          foreach($line in Get-Content $file) {
+              if($line -eq "[Setup]"){
+                  $setup = $num
+              }
+              if($line -eq "#define GuiVersion GetFileVersion(`"bin\monero-wallet-gui.exe`")"){
+                  $define = $num
+              }
+              # [important] this line creates a .tmp file to the installer and makes the hash not repducible so must be replaced
+              if($line -eq "Source: {#file AddBackslash(SourcePath) + `"ReadMe.htm`"}; DestDir: `"{app}`"; DestName: `"ReadMe.htm`"; Flags: ignoreversion"){
+                  $read = $num
+              }
+              $num += 1
+          }
           
-          $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
-          $date = $lastModifiedDate.ToString("yyyy-MM-dd")
-          $time = $lastModifiedDate.ToString("HH:mm")
-
-          #$content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
-
-          $content[10] = "TouchDate=none `nTouchTime=none"
+          echo $define
+          echo $read
+          echo $setup
           
-          # test
-          $content[73] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          $content[$define] = '#define GuiVersion "' + $strip_v + '"'
+          $content[$setup] = "[Setup]`nTouchDate=none `nTouchTime=none"
+          # the other lines are not optional, so at some point we may not find this line to replace
+          if($read -ne -1){
+            $content[$read] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          }
           $content | Set-Content $file
-
           type $file
 
     - name: "Move InnoSetup files to installer dir"
