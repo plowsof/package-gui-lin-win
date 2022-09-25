@@ -107,24 +107,20 @@ jobs:
           $file = 'inno\installers\windows\Monero.iss'
           $strip_v = $TAG.substring(1,$TAG.length - 1)
           $content = Get-Content $file
+          
           # string replace these 2 lines
           # #define GuiVersion GetFileVersion("bin\monero-wallet-gui.exe")
           # Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion
-          
-          $repl_1 = "#define GuiVersion GetFileVersion(`"bin\monero-wallet-gui.exe`")"
-          $new_1 = "Source: `"ReadMe.htm`"; DestDir: `"{app}`"; Flags: ignoreversion"
-          ((Get-Content -path $file -Raw) -replace "$repl_1","$new_1") | Set-Content -Path $file
-          
+          # find [Setup] and append our settings
           $num = 0
           foreach($line in Get-Content $file) {
               if($line -eq "[Setup]"){
-                  # Work here
                   $setup = $num
               }
-              # [important] this line creates a .tmp file to the installer and makes the hash not repducible so must be replaced
               if($line -eq "#define GuiVersion GetFileVersion(`"bin\monero-wallet-gui.exe`")"){
                   $define = $num
               }
+              # [important] this line creates a .tmp file to the installer and makes the hash not repducible so must be replaced
               if($line -eq "Source: {#file AddBackslash(SourcePath) + `"ReadMe.htm`"}; DestDir: `"{app}`"; DestName: `"ReadMe.htm`"; Flags: ignoreversion"){
                   $read = $num
               }
@@ -135,7 +131,7 @@ jobs:
           echo $read
           echo $setup
           
-          $content[$define] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          $content[$define] = '#define GuiVersion "' + $strip_v + '"'
           $content[$setup] = "[Setup]`nTouchDate=none `nTouchTime=none"
           $content[$read] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           $content | Set-Content $file
