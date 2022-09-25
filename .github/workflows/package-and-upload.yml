@@ -114,28 +114,20 @@ jobs:
           foreach($line in Get-Content $file) {
               if($line -eq "[Setup]"){
                   # Work here
-                  echo $line
+                  $setup = $num
+              }
+              if($line -eq "#define GuiVersion GetFileVersion\(\"bin\\monero-wallet-gui.exe\"\)" {
+                  $define = $num
+              }
+              if($line -eq "Source: \"ReadMe.htm\"; DestDir: \"{app}\"; Flags: ignoreversion") {
+                  $read = $num
               }
               $num += 1
           }
-          $new_str = '#define GuiVersion "' + $strip_v + '"'
-          $repl_1 = '#define GuiVersion GetFileVersion\("bin\monero-wallet-gui.exe")'
-          ((Get-Content -path $file -Raw) -replace \"$repl_1\",\"$new_str\") | Set-Content -Path $file
           
-          $new_str = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
-          $repl_2 = '\Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion\'
-          ((Get-Content -path $file -Raw) -replace "$repl_2","$new_str") | Set-Content -Path $file
-
-          $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
-          $date = $lastModifiedDate.ToString("yyyy-MM-dd")
-          $time = $lastModifiedDate.ToString("HH:mm")
-
-          #$content[12] = "TouchDate=" + $date + "`nTouchTime=" + $time + "`nCompression=none"
-
-          $new_str = "\[Setup\]"
-          $repl_3 = "\[Setup\] `nTouchDate=none `nTouchTime=none"
-          ((Get-Content -path $file -Raw) -replace '\[Setup\]',"$repl_3") | Set-Content -Path $file
-
+          echo $define
+          echo $read
+          echo $setup
           type $file
 
     - name: "Move InnoSetup files to installer dir"
