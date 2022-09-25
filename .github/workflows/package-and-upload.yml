@@ -112,7 +112,7 @@ jobs:
           # Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion
           $num = 0
           foreach($line in Get-Content $file) {
-              if($line == "[Setup]"){
+              if($line -eq "[Setup]"){
                   # Work here
                   echo $line
               }
