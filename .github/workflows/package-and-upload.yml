@@ -114,7 +114,7 @@ jobs:
           foreach($line in Get-Content $file) {
               if($line == "[Setup]"){
                   # Work here
-                  print $num
+                  echo $line
               }
               $num += 1
           }
