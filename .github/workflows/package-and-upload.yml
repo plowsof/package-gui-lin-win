@@ -119,7 +119,7 @@ jobs:
               if($line -eq "#define GuiVersion GetFileVersion(`"bin\monero-wallet-gui.exe`")"){
                   $define = $num
               }
-              if($line -eq "Source: `"ReadMe.htm`"; DestDir: `"{app}`"; Flags: ignoreversion"){
+              if($line -eq "Source: {#file AddBackslash(SourcePath) + `"ReadMe.htm`"}; DestDir: `"{app}`"; DestName: `"ReadMe.htm`"; Flags: ignoreversion"){
                   $read = $num
               }
               $num += 1
