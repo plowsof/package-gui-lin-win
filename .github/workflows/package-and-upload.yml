@@ -113,7 +113,7 @@ jobs:
           
           $repl_1 = "#define GuiVersion GetFileVersion(`"bin\monero-wallet-gui.exe`")"
           $new_1 = "Source: `"ReadMe.htm`"; DestDir: `"{app}`"; Flags: ignoreversion"
-          ((Get-Content -path $file -Raw) -replace $repl_1,$new_1) | Set-Content -Path $file
+          ((Get-Content -path $file -Raw) -replace "$repl_1","$new_1") | Set-Content -Path $file
           
           $num = 0
           foreach($line in Get-Content $file) {
@@ -121,6 +121,7 @@ jobs:
                   # Work here
                   $setup = $num
               }
+              # [important] this line creates a .tmp file to the installer and makes the hash not repducible so must be replaced
               if($line -eq "#define GuiVersion GetFileVersion(`"bin\monero-wallet-gui.exe`")"){
                   $define = $num
               }
@@ -133,7 +134,11 @@ jobs:
           echo $define
           echo $read
           echo $setup
-          exit 1
+          
+          $content[$define] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          $content[$setup] = "[Setup]`nTouchDate=none `nTouchTime=none"
+          $content[$read] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          $content | Set-Content $file
           type $file
 
     - name: "Move InnoSetup files to installer dir"
