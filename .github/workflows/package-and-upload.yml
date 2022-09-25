@@ -107,12 +107,12 @@ jobs:
           $file = 'inno\installers\windows\Monero.iss'
           $strip_v = $TAG.substring(1,$TAG.length - 1)
           $content = Get-Content $file
-          
           # string replace these 2 lines
           # #define GuiVersion GetFileVersion("bin\monero-wallet-gui.exe")
           # Source: {#file AddBackslash(SourcePath) + "ReadMe.htm"}; DestDir: "{app}"; DestName: "ReadMe.htm"; Flags: ignoreversion
           # find [Setup] and append our settings
           $num = 0
+          $read = -1
           foreach($line in Get-Content $file) {
               if($line -eq "[Setup]"){
                   $setup = $num
@@ -133,7 +133,10 @@ jobs:
           
           $content[$define] = '#define GuiVersion "' + $strip_v + '"'
           $content[$setup] = "[Setup]`nTouchDate=none `nTouchTime=none"
-          $content[$read] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          # the other lines are not optional, so at some point we may not find this line to replace
+          if($read != -1){
+            $content[$read] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
+          }
           $content | Set-Content $file
           type $file
 
