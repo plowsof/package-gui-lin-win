@@ -116,10 +116,10 @@ jobs:
                   # Work here
                   $setup = $num
               }
-              if($line -eq "#define GuiVersion GetFileVersion(`"bin`\monero-wallet-gui.exe`")" {
+              if($line -eq "#define GuiVersion GetFileVersion(`"bin`\monero-wallet-gui.exe`""){
                   $define = $num
               }
-              if($line -eq "Source: `"ReadMe.htm`"; DestDir: `"{app}`"; Flags: ignoreversion") {
+              if($line -eq "Source: `"ReadMe.htm`"; DestDir: `"{app}`"; Flags: ignoreversion"){
                   $read = $num
               }
               $num += 1
