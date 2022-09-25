@@ -134,7 +134,7 @@ jobs:
           $content[$define] = '#define GuiVersion "' + $strip_v + '"'
           $content[$setup] = "[Setup]`nTouchDate=none `nTouchTime=none"
           # the other lines are not optional, so at some point we may not find this line to replace
-          if($read != -1){
+          if($read -ne -1){
             $content[$read] = 'Source: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion'
           }
           $content | Set-Content $file
