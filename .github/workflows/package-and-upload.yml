@@ -69,13 +69,13 @@ jobs:
         unzip "monero-win-x64-${TAG}.zip" -d clifiles
 
         # Create lowgfx bat file with heredoc
-
+        cr=$'\r'
         tee "start-low-graphics-mode.bat" <<EOF
-        @echo off
-        
-        set QMLSCENE_DEVICE=softwarecontext
-        
-        start /b monero-wallet-gui.exe
+        @echo off$cr
+        $cr
+        set QMLSCENE_DEVICE=softwarecontext$cr
+        $cr
+        start /b monero-wallet-gui.exe$cr
         EOF
         sha256sum start-low-graphics-mode.bat
         mkdir -p "dummy/monero-gui-${TAG}/extras"
