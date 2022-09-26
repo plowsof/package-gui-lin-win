@@ -139,13 +139,14 @@ jobs:
 
         stamp=$(stat -c '%y' frombuild/monero-wallet-gui.exe) 
 
-        corrected_stamp=$(date -d"${stamp} +1 hours" +"%Y%m%d%H%M.%S")
+        corrected_stamp=$(date -d"${stamp} +0 hours" +"%Y%m%d%H%M.%S")
 
         for f in "inno/installers/windows/*" "inno/installers/windows/**/*" "inno/installers/windows/**/**/*"; do
           echo $f
           touch -t "${corrected_stamp}" $f
         done
-
+        
+        ls -la inno/installers/windows/*
         wine inno/installers/windows/ISCC.exe inno/installers/windows/Monero.iss
 
 
