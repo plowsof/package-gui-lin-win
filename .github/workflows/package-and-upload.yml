@@ -152,7 +152,7 @@ jobs:
         mkdir uploadme
         mv  inno/installers/windows/Output/mysetup.exe "uploadme/monero-gui-install-win-x64-${TAG}.exe"
 
-        sha256sum uploadme*
+        sha256sum uploadme/*
 
   packageWindows:
     runs-on: windows-2019
