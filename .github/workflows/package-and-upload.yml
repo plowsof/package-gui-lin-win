@@ -18,6 +18,7 @@ jobs:
   makeLinuxExe:
     runs-on: ubuntu-20.04
     steps:
+    - uses: actions/checkout@v2
     - name: Set up dependencies
       run: |
         sudo apt-add-repository -y ppa:ondrej/php
