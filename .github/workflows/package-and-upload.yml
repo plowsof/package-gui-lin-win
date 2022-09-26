@@ -438,6 +438,7 @@ jobs:
           #scp does not allow "."
     - name: "Print hashes"
       run: |
+        tar --version
         cd uploadme
         sha256sum *
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
