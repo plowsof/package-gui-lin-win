@@ -137,7 +137,7 @@ jobs:
 
         HOMEDIR="$(pwd)"
 
-        stamp=$(TZ=UTC-1 stat -c '%y' frombuild/monero-wallet-gui.exe) 
+        stamp=$(TZ=UTC-10 stat -c '%y' frombuild/monero-wallet-gui.exe) 
 
         corrected_stamp=$(date -d"${stamp} +0 hours" +"%Y%m%d%H%M.%S")
 
