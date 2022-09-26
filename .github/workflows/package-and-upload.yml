@@ -410,7 +410,8 @@ jobs:
 
           chmod -R 644 monero-gui-${TAG}/monero-gui-wallet-guide.pdf 
           chmod -R 644 monero-gui-${TAG}/LICENSE
-          MTIME_GUI=$(date -r monero-wallet-gui +'%F')
+          stamp=$(stat -c '%y' monero-wallet-gui) 
+          MTIME_GUI=$(date -d"${stamp} +0 hours" +"%Y-%m%-d %H:%M:%S")
           ls -la 
           echo "BEFORE CHMOD"
           for filename in ${HEAD}${TAG}/*; do
