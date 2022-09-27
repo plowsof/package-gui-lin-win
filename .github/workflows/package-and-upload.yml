@@ -4,19 +4,206 @@ on:
       guifile:
         description: 'run id'     
         required: true
-        default: "2680356377"
-      tag:
-        description: 'Tag version'
-        required: true
-        default: "v0.18.0.0"
+        default: "3078884796"
       remotedir:
         description: 'remote dir'
         required: true
         default: "/tmp"
 
 jobs:
+  GetTag:
+    runs-on: ubuntu-20.04
+    outputs:
+      output1: ${{ steps.tag.outputs.thetag }}
+    steps:
+    - name: Grab tag from runid (comfy)
+      id: tag
+      run: |
+        run_id="${{ github.event.inputs.guifile }}"
+        workflow_run=$(curl \
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
+        num=0
+        for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
+            TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
+            break
+        done
+        echo $TAG
+        echo "::set-output name=thetag::$TAG"
+
+  MakeExeWINE:
+    runs-on: ubuntu-20.04
+    needs: GetTag
+    outputs:
+      output1: ${{ steps.win.outputs.hashwine }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up dependencies
+      run: |
+        sudo apt-add-repository -y ppa:ondrej/php
+        sudo apt-get install ppa-purge
+        sudo ppa-purge -y ppa:ondrej/php
+        sudo dpkg --add-architecture i386
+        sudo apt-get update -qq
+        sudo apt-get install -yqq wine-stable
+    - name: "Everything"
+      run: |
+        sudo apt-get install -y jq curl
+        RUN_ID=${{ github.event.inputs.guifile }}
+        GH_KEY="${{ secrets.GITHUB_TOKEN }}"
+        TAG=${{needs.GetTag.outputs.output1}}
+        # Download docker-windows-static
+        download_artifact(){ run_id=$1 get_name=$2 save_as=$3 gh_key=$4
+          workflow_run=$(curl \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
+          num=0
+          for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
+            if [[ "${artifact_name}" == "${get_name}" ]]; then
+              URL=$(echo ${workflow_run} | jq -r ".artifacts[${num}].archive_download_url")
+              #TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
+              echo "DONE"
+              break
+            fi
+            ((num+=1))
+          done
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${gh_key}" \
+            -L -o "${save_as}" \
+            "${URL}"
+          echo $URL
+        }
+
+        download_artifact $RUN_ID "docker-windows-static" "docker-windows-static" "${GH_KEY}"
+
+        #Extract static files to frombuild
+        unzip "docker-windows-static" -d frombuild
+
+        # Download CLI/PDF file(s)
+
+        wget -q "https://gui.xmr.pm/files/cli/${TAG}/monero-win-x64-${TAG}.zip" 
+        wget -q "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf" 
+
+        unzip "monero-win-x64-${TAG}.zip" -d clifiles
+
+        # Create lowgfx bat file with heredoc
+        cr=$'\r'
+        tee "start-low-graphics-mode.bat" <<EOF
+        @echo off$cr
+        $cr
+        set QMLSCENE_DEVICE=softwarecontext$cr
+        $cr
+        start /b monero-wallet-gui.exe$cr
+        EOF
+        sha256sum start-low-graphics-mode.bat
+        mkdir -p "dummy/monero-gui-${TAG}/extras"
+        HEAD="clifiles/monero-x86_64-w64-mingw32-${TAG}"
+        OUT="dummy/monero-gui-${TAG}"
+
+        echo "HEAD is ${HEAD}"
+        license="${HEAD}/LICENSE"
+        monerod="${HEAD}/monerod.exe"
+        echo "Hello"
+        mv $license "${OUT}/"
+        mv $monerod "${OUT}/"
+        echo "123"
+        readme="${HEAD}/README.md"; rm "${readme}"
+        anon="${HEAD}/ANONYMITY_NETWORKS.md"; rm "${anon}"
+
+        dest="dummy/monero-gui-${TAG}"
+
+        cp monero-gui-wallet-guide.pdf "${dest}/"
+        cp frombuild/monero-wallet-gui.exe "${dest}/"
+        cp utils/opengl32sw.dll "${dest}/"
+        cp start-low-graphics-mode.bat "${dest}/"
+        ls ${HEAD}
+        for f in "${HEAD}/*"; do
+          echo "$f"
+          cp $f "dummy/monero-gui-${TAG}/extras"
+        done
+        dest="dummy/monero-gui-${TAG}"
+        mkdir inno; cd inno
+        git init
+        git remote add -f origin https://github.com/monero-project/monero-gui
+        git sparse-checkout init
+        git sparse-checkout set "installers/windows"
+        git pull origin master
+        mkdir -p installers/windows/bin
+
+        cd ..
+
+        for f in "${dest}/*"; do
+          cp -r $f "inno/installers/windows/bin"
+        done
+
+        strip_v="${TAG:1}"
+        inno_file='inno/installers/windows/Monero.iss'
+
+        # mistake in v0.18.1.1. to reproduce hash use line 13 (not possible with this version)
+        # -e '13 cTouchDate=none \nTouchTime=none' \
+        
+        lines="$(cat $inno_file)"
+        SAVEIFS=$IFS
+        IFS=$'\n'
+        lines=($lines)
+        IFS=$SAVEIFS
+        num=1
+        setup="[Setup]"
+        define="#define GuiVersion GetFileVersion(\"bin\monero-wallet-gui.exe\")"
+        readme="Source: {#file AddBackslash(SourcePath) + \"ReadMe.htm\"}; DestDir: \"{app}\"; DestName: \"ReadMe.htm\"; Flags: ignoreversion"
+
+        for line in "${lines[@]}"; do
+            if [[ "$line" = "$setup"* ]] ; then
+              echo "we found setup $num"
+              setup=$num
+            elif [[ "$line" = "$define"* ]] ; then
+              echo "we found define $num"
+              define=$num
+            elif [[ "$line" = "$readme"* ]] ; then
+              echo "we found readme $num"
+              readme=$num
+              sed -i "${readme} cSource: \"ReadMe.htm\"; DestDir: \"{app}\"; Flags: ignoreversion" ${inno_file}
+            fi
+            ((num+=1))
+        done
+
+        sed -i \
+        -e "${define} c#define GuiVersion \"${strip_v}\"" \
+        -e "${setup} c\[Setup\] \nTouchDate=none \nTouchTime=none" ${inno_file}
+        for f in "utils/*"; do
+          cp $f "inno/installers/windows"
+        done
+
+        HOMEDIR="$(pwd)"
+
+        stamp=$(stat -c '%y' frombuild/monero-wallet-gui.exe) 
+
+        corrected_stamp=$(date -d"${stamp} +0 hours" +"%Y%m%d%H%M.%S")
+        echo "The timestamp is ${corrected_stamp}\n**********************"
+        for f in "inno/installers/windows/*" "inno/installers/windows/**/*" "inno/installers/windows/**/**/*"; do
+          echo $f
+          touch -t "${corrected_stamp}" $f
+        done
+        
+        ls -la inno/installers/windows/*
+        wine inno/installers/windows/ISCC.exe inno/installers/windows/Monero.iss
+
+        mkdir uploadme
+        mv  inno/installers/windows/Output/mysetup.exe "uploadme/monero-gui-install-win-x64-${TAG}.exe"
+    - id: win
+      run: |
+        cd uploadme
+        sha256sum *
+        hash=$(sha256sum *)
+        echo "::set-output name=hashwine::$hash"
+
   packageWindows:
     runs-on: windows-2019
+    needs: GetTag
+    outputs:
+      output1: ${{ steps.hashexe.outputs.hashexe }}
+      output2: ${{ steps.hashzip.outputs.hashzip }}
     steps:
     - uses: actions/checkout@v2
 
@@ -47,7 +234,7 @@ jobs:
     
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
-          $TAG = "${{ github.event.inputs.tag }}"
+          $TAG = "${{needs.GetTag.outputs.output1}}"
           Invoke-WebRequest -Uri "https://gui.xmr.pm/files/cli/$($TAG)/monero-win-x64-$($TAG).zip" -OutFile "monero-win-x64-$($TAG).zip"
           Invoke-WebRequest -Uri "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf" -OutFile "monero-gui-wallet-guide.pdf"
           Expand-Archive -Path monero-win-x64-$($TAG).zip -DestinationPath clifiles
@@ -66,7 +253,7 @@ jobs:
           
     - name: "Prepare files for zipping"
       run: |
-          $TAG = "${{ github.event.inputs.tag }}"
+          $TAG = "${{needs.GetTag.outputs.output1}}"
           mkdir -p dummy\monero-gui-$($TAG)\extras
           $HEAD = "clifiles\monero-x86_64-w64-mingw32-" + $TAG
           $OUT = "dummy\monero-gui-" + $TAG
@@ -89,7 +276,7 @@ jobs:
 
     - name: "Clone installer folder from Monero-GUI repo"
       run: |
-          $dest = "dummy\monero-gui-" + "${{ github.event.inputs.tag }}"
+          $dest = "dummy\monero-gui-" + "${{needs.GetTag.outputs.output1}}"
           mkdir inno; cd inno
           git init
           git remote add -f origin https://github.com/monero-project/monero-gui
@@ -103,7 +290,7 @@ jobs:
           
     - name: "Add version to Monero.iss file"
       run: |
-          $TAG = "${{ github.event.inputs.tag }}"
+          $TAG = "${{needs.GetTag.outputs.output1}}"
           $file = 'inno\installers\windows\Monero.iss'
           $strip_v = $TAG.substring(1,$TAG.length - 1)
           $content = Get-Content $file
@@ -143,7 +330,7 @@ jobs:
     - name: "Move InnoSetup files to installer dir"
       run: Copy-Item -Path "utils\*" -Destination "inno\installers\windows" -Recurse
 
-    - name: "Create monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
+    - name: "Create monero-gui-install-win-x64-${{needs.GetTag.outputs.output1}}.exe"
       run: |
           $inno_cc = "ISCC.exe"
           $HOMEDIR = Get-Location
@@ -159,7 +346,7 @@ jobs:
           
           .\ISCC.exe Monero.iss
           
-          $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
+          $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{needs.GetTag.outputs.output1}}.exe"
           
           sha256sum Output\mysetup.exe
           
@@ -167,20 +354,32 @@ jobs:
           
           cd $HOMEDIR.tostring()
   
-    - name: "Create monero-gui-win-x64-${{ github.event.inputs.tag }}.zip"
+    - name: "Create monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip"
       run: |
         $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
         (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = $lastModifiedDate.tostring()}
 
         (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
         
-        Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
+        Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip
         
-        sha256sum uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
-    - name: "Print hashes"
+        sha256sum uploadme\monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip
+    - name: Exe hash
+      id: hashexe
       run: |
         cd uploadme
-        sha256sum *
+        echo "$(sha256sum *.exe | sed 's/*//')"
+        hash=$(sha256sum *.exe | sed 's/*//')
+        echo "::set-output name=hashexe::$hash"
+      shell: bash
+    - name: Zip hash
+      id: hashzip
+      run: |
+        cd uploadme
+        echo "$(sha256sum *.zip | sed 's/*//')"
+        hash=$(sha256sum *.zip | sed 's/*//')
+        echo "::set-output name=hashzip::$hash"
+      shell: bash
     - name: "Upload files using SCP"
       run: |
         Install-Module -Name Posh-SSH -force
@@ -191,13 +390,14 @@ jobs:
         $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
       
         #should be a for loop / some recursive thing
-        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
-        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
+        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{needs.GetTag.outputs.output1}}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
+        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
 
-        
-  
   packageLinux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    needs: GetTag
+    outputs:
+      output1: ${{ steps.linux.outputs.hash }}
     steps:
     - uses: actions/checkout@v2
     - name: Download docker-linux-static from Monero-GUI build.yml
@@ -211,7 +411,8 @@ jobs:
 
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
-          TAG=${{ github.event.inputs.tag }}
+          tar --version
+          TAG=${{needs.GetTag.outputs.output1}}
 
           wget -q "https://gui.xmr.pm/files/cli/${TAG}/monero-linux-x64-${TAG}.tar.bz2"
           wget -q "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf"
@@ -227,12 +428,12 @@ jobs:
           
     - name: "Extract CLI files"
       run: |
-          TAG=${{ github.event.inputs.tag }}
+          TAG=${{needs.GetTag.outputs.output1}}
           tar -xvf "monero-linux-x64-${TAG}.tar.bz2"
 
     - name: "Prepare / move files for packaging"
       run: |
-          TAG=${{ github.event.inputs.tag }}
+          TAG=${{needs.GetTag.outputs.output1}}
           mkdir -p monero-gui-${TAG}/extras
           HEAD=monero-x86_64-linux-gnu-
           mv ${HEAD}${TAG}/LICENSE monero-gui-${TAG}/.
@@ -247,7 +448,8 @@ jobs:
 
           chmod -R 644 monero-gui-${TAG}/monero-gui-wallet-guide.pdf 
           chmod -R 644 monero-gui-${TAG}/LICENSE
-          MTIME_GUI=$(date -r monero-wallet-gui +'%F')
+          stamp=$(stat -c '%y' monero-wallet-gui) 
+          MTIME_GUI=$(date -d"${stamp} +0 hours" +"%Y-%m-%d %H:%M:%S")
           ls -la 
           echo "BEFORE CHMOD"
           for filename in ${HEAD}${TAG}/*; do
@@ -261,7 +463,10 @@ jobs:
           mkdir uploadme
           cd dummy
           echo "MTIME_GUI = ${MTIME_GUI}"
-          GZIP=-n tar --sort=name --mtime=${MTIME_GUI} -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
+          TZ=UTC tar --sort=name \
+            --mtime="${MTIME_GUI}" \
+            --owner=0 --group=0 --numeric-owner \
+            -cf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
           cp monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
           cd ..
           
@@ -272,11 +477,35 @@ jobs:
           #if scp remote-host:~/myfile ./ >&/dev/null ; then echo "transfer OK" ; else echo "transfer failed" ; fi
           
           #scp does not allow "."
-    - name: "Print hashes"
+    - name: Print hash
+      id: linux
       run: |
         cd uploadme
         sha256sum *
-    - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
+        hash=$(sha256sum *)
+        echo "::set-output name=hash::$hash"
+
+    - name: "Upload monero-gui-linux-x64-${{needs.GetTag.outputs.output1}}.tar.bz2"
       run: |
         cd uploadme
-        scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
+        scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{needs.GetTag.outputs.output1}}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
+  Report:
+    name: Print hashes
+    runs-on: ubuntu-latest
+    needs: [ packageLinux, packageWindows, MakeExeWINE]
+    steps:
+      - name: Print and compare WIN/LIN exe hashes
+        run: |
+          echo $(echo ${{needs.packageWindows.outputs.output1}} | sed 's/ /  /g')
+          echo "${{needs.packageLinux.outputs.output1}}"
+          echo $(echo ${{needs.packageWindows.outputs.output2}} | sed 's/ /  /g')
+          #echo "${{needs.MakeExeWINE.outputs.output1}}"
+
+          wine="$(echo \"${{needs.MakeExeWINE.outputs.output1}}\" | sed 's/ //g')"
+          win="$(echo \"${{needs.packageWindows.outputs.output1}}\" | sed 's/ //g')"
+
+          if [[ "${wine}" != "${win}" ]] ; then
+            exit 1
+          else
+            echo "🍻 Hashes match 🍻"
+          fi
