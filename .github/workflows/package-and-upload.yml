@@ -184,8 +184,8 @@ jobs:
   packageWindows:
     runs-on: windows-2019
     outputs:
-      output1: ${{ steps.win.outputs.hashexe }}
-      output2: ${{ steps.win.outputs.hashzip }}
+      output1: ${{ steps.hashexe.outputs.hashexe }}
+      output2: ${{ steps.hashzip.outputs.hashzip }}
     steps:
     - uses: actions/checkout@v2
 
