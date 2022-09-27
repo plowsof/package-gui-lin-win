@@ -438,13 +438,12 @@ jobs:
           #if scp remote-host:~/myfile ./ >&/dev/null ; then echo "transfer OK" ; else echo "transfer failed" ; fi
           
           #scp does not allow "."
-    - name: "Print hashes"
     - id: linux
       run: |
         cd uploadme
         sha256sum *
         hash=$(sha256sum -z *)
-        echo "::set-output name=hash::$hash"
+        echo "::set-output name=hash::${hash}"
 
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
       run: |
@@ -452,6 +451,6 @@ jobs:
         scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
   Report:
     runs-on: ubuntu-latest
-    needs: [ packageLinux ]
+    needs: packageLinux
     steps:
       - run: echo ${{needs.packageLinux.outputs.output1}}
