@@ -350,6 +350,7 @@ jobs:
       id: hashexe
       run: |
         cd uploadme
+        echo $(sha256sum *.exe | sed 's/*//')
         hash=$(sha256sum *.exe | sed 's/*//')
         echo "::set-output name=hashexe::$hash"
       shell: bash
@@ -357,6 +358,7 @@ jobs:
       id: hashzip
       run: |
         cd uploadme
+        $(sha256sum *.zip | sed 's/*//')
         hash=$(sha256sum *.zip | sed 's/*//')
         echo "::set-output name=hashzip::$hash"
       shell: bash
@@ -456,7 +458,8 @@ jobs:
           #if scp remote-host:~/myfile ./ >&/dev/null ; then echo "transfer OK" ; else echo "transfer failed" ; fi
           
           #scp does not allow "."
-    - id: linux
+    - name: Print hash
+      id: linux
       run: |
         cd uploadme
         sha256sum *
@@ -473,13 +476,13 @@ jobs:
     needs: [ packageLinux, packageWindows, MakeExeWINE]
     steps:
       - run: |
-          echo ${{needs.packageWindows.outputs.output1}}
-          echo ${{needs.packageLinux.outputs.output1}}
-          echo ${{needs.packageWindows.outputs.output2}}
-          echo ${{needs.MakeExeWINE.outputs.output1}}
+          echo "${{needs.packageWindows.outputs.output1}}"
+          echo "${{needs.packageLinux.outputs.output1}}"
+          echo "${{needs.packageWindows.outputs.output2}}"
+          echo "${{needs.MakeExeWINE.outputs.output1}}"
 
-          wine=${{needs.MakeExeWINE.outputs.output1}}
-          win=${{needs.packageWindows.outputs.output1}}
+          wine="echo ${{needs.MakeExeWINE.outputs.output1}} | sed 's/ //g"
+          win="${{needs.packageWindows.outputs.output1}} | sed 's/ //g'"
 
           if [[ "${wine}" != "${win}" ]] ; then
             exit 1
