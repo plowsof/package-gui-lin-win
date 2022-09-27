@@ -15,6 +15,26 @@ on:
         default: "/tmp"
 
 jobs:
+  GetTag:
+      MakeExeWINE:
+    runs-on: ubuntu-20.04
+    outputs:
+      output1: ${{ steps.tag.outputs.thetag }}
+    - name: Grab tag from runid (comfy)
+      id: tag
+      run: |
+      run_id="${{ github.event.inputs.guifile }}""
+      workflow_run=$(curl \
+        -H "Accept: application/vnd.github+json" \
+        https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
+      num=0
+      for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
+          TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
+          break
+      done
+      echo $TAG
+      echo "::set-output name=thetag::$TAG"
+
   MakeExeWINE:
     runs-on: ubuntu-20.04
     outputs:
@@ -183,6 +203,7 @@ jobs:
 
   packageWindows:
     runs-on: windows-2019
+    needs: GetTag
     outputs:
       output1: ${{ steps.hashexe.outputs.hashexe }}
       output2: ${{ steps.hashzip.outputs.hashzip }}
@@ -216,7 +237,7 @@ jobs:
     
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
-          $TAG = "${{ github.event.inputs.tag }}"
+          $TAG = "${{needs.GetTag.outputs.output1}}"
           Invoke-WebRequest -Uri "https://gui.xmr.pm/files/cli/$($TAG)/monero-win-x64-$($TAG).zip" -OutFile "monero-win-x64-$($TAG).zip"
           Invoke-WebRequest -Uri "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf" -OutFile "monero-gui-wallet-guide.pdf"
           Expand-Archive -Path monero-win-x64-$($TAG).zip -DestinationPath clifiles
@@ -235,7 +256,7 @@ jobs:
           
     - name: "Prepare files for zipping"
       run: |
-          $TAG = "${{ github.event.inputs.tag }}"
+          $TAG = "${{needs.GetTag.outputs.output1}}"
           mkdir -p dummy\monero-gui-$($TAG)\extras
           $HEAD = "clifiles\monero-x86_64-w64-mingw32-" + $TAG
           $OUT = "dummy\monero-gui-" + $TAG
@@ -258,7 +279,7 @@ jobs:
 
     - name: "Clone installer folder from Monero-GUI repo"
       run: |
-          $dest = "dummy\monero-gui-" + "${{ github.event.inputs.tag }}"
+          $dest = "dummy\monero-gui-" + "${{needs.GetTag.outputs.output1}}"
           mkdir inno; cd inno
           git init
           git remote add -f origin https://github.com/monero-project/monero-gui
@@ -272,7 +293,7 @@ jobs:
           
     - name: "Add version to Monero.iss file"
       run: |
-          $TAG = "${{ github.event.inputs.tag }}"
+          $TAG = "${{needs.GetTag.outputs.output1}}"
           $file = 'inno\installers\windows\Monero.iss'
           $strip_v = $TAG.substring(1,$TAG.length - 1)
           $content = Get-Content $file
@@ -312,7 +333,7 @@ jobs:
     - name: "Move InnoSetup files to installer dir"
       run: Copy-Item -Path "utils\*" -Destination "inno\installers\windows" -Recurse
 
-    - name: "Create monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
+    - name: "Create monero-gui-install-win-x64-${{needs.GetTag.outputs.output1}}.exe"
       run: |
           $inno_cc = "ISCC.exe"
           $HOMEDIR = Get-Location
@@ -328,7 +349,7 @@ jobs:
           
           .\ISCC.exe Monero.iss
           
-          $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe"
+          $out = $HOMEDIR.tostring() + "\uploadme\monero-gui-install-win-x64-${{needs.GetTag.outputs.output1}}.exe"
           
           sha256sum Output\mysetup.exe
           
@@ -336,16 +357,16 @@ jobs:
           
           cd $HOMEDIR.tostring()
   
-    - name: "Create monero-gui-win-x64-${{ github.event.inputs.tag }}.zip"
+    - name: "Create monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip"
       run: |
         $lastModifiedDate = (Get-Item "frombuild\monero-wallet-gui.exe").LastWriteTime
         (Get-ChildItem -Path dummy –Recurse) | % {$_.LastWriteTime = $lastModifiedDate.tostring()}
 
         (Get-ChildItem -Path dummy –Recurse) | Foreach {$_.LastWriteTime}
         
-        Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
+        Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip
         
-        sha256sum uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
+        sha256sum uploadme\monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip
     - name: Exe hash
       id: hashexe
       run: |
@@ -372,11 +393,12 @@ jobs:
         $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
       
         #should be a for loop / some recursive thing
-        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
-        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
+        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{needs.GetTag.outputs.output1}}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
+        Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{needs.GetTag.outputs.output1}}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
 
   packageLinux:
     runs-on: ubuntu-22.04
+    needs: GetTag
     outputs:
       output1: ${{ steps.linux.outputs.hash }}
     steps:
@@ -393,7 +415,7 @@ jobs:
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
           tar --version
-          TAG=${{ github.event.inputs.tag }}
+          TAG=${{needs.GetTag.outputs.output1}}
 
           wget -q "https://gui.xmr.pm/files/cli/${TAG}/monero-linux-x64-${TAG}.tar.bz2"
           wget -q "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf"
@@ -409,12 +431,12 @@ jobs:
           
     - name: "Extract CLI files"
       run: |
-          TAG=${{ github.event.inputs.tag }}
+          TAG=${{needs.GetTag.outputs.output1}}
           tar -xvf "monero-linux-x64-${TAG}.tar.bz2"
 
     - name: "Prepare / move files for packaging"
       run: |
-          TAG=${{ github.event.inputs.tag }}
+          TAG=${{needs.GetTag.outputs.output1}}
           mkdir -p monero-gui-${TAG}/extras
           HEAD=monero-x86_64-linux-gnu-
           mv ${HEAD}${TAG}/LICENSE monero-gui-${TAG}/.
@@ -466,10 +488,10 @@ jobs:
         hash=$(sha256sum *)
         echo "::set-output name=hash::$hash"
 
-    - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
+    - name: "Upload monero-gui-linux-x64-${{needs.GetTag.outputs.output1}}.tar.bz2"
       run: |
         cd uploadme
-        scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
+        scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{needs.GetTag.outputs.output1}}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
   Report:
     name: Print hashes
     runs-on: ubuntu-latest
