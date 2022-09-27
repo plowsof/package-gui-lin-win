@@ -16,24 +16,24 @@ on:
 
 jobs:
   GetTag:
-      MakeExeWINE:
     runs-on: ubuntu-20.04
     outputs:
       output1: ${{ steps.tag.outputs.thetag }}
+    steps:
     - name: Grab tag from runid (comfy)
       id: tag
       run: |
-      run_id="${{ github.event.inputs.guifile }}""
-      workflow_run=$(curl \
-        -H "Accept: application/vnd.github+json" \
-        https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
-      num=0
-      for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
-          TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
-          break
-      done
-      echo $TAG
-      echo "::set-output name=thetag::$TAG"
+        run_id="${{ github.event.inputs.guifile }}""
+        workflow_run=$(curl \
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
+        num=0
+        for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
+            TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
+            break
+        done
+        echo $TAG
+        echo "::set-output name=thetag::$TAG"
 
   MakeExeWINE:
     runs-on: ubuntu-20.04
