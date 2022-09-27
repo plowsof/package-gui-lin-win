@@ -351,12 +351,14 @@ jobs:
         cd uploadme
         hash=$(sha256sum *.exe)
         echo "::set-output name=hashexe::$hash"
+      shell: bash
 
     - id: hashzip
       run: |
         cd uploadme
         hash=$(sha256sum *.zip)
         echo "::set-output name=hashzip::$hash"
+      shell: bash
     - name: "Upload files using SCP"
       run: |
         Install-Module -Name Posh-SSH -force
