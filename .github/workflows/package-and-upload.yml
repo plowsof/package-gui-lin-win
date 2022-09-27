@@ -350,7 +350,7 @@ jobs:
       id: hashexe
       run: |
         cd uploadme
-        echo $(sha256sum *.exe | sed 's/*//')
+        echo "$(sha256sum *.exe | sed 's/*//')"
         hash=$(sha256sum *.exe | sed 's/*//')
         echo "::set-output name=hashexe::$hash"
       shell: bash
@@ -358,7 +358,7 @@ jobs:
       id: hashzip
       run: |
         cd uploadme
-        $(sha256sum *.zip | sed 's/*//')
+        echo "$(sha256sum *.zip | sed 's/*//')"
         hash=$(sha256sum *.zip | sed 's/*//')
         echo "::set-output name=hashzip::$hash"
       shell: bash
