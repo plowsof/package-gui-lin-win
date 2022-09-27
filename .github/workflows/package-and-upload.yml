@@ -17,6 +17,8 @@ on:
 jobs:
   MakeExeWINE:
     runs-on: ubuntu-20.04
+    outputs:
+      output1: ${{ steps.win.outputs.hashwine }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up dependencies
@@ -172,12 +174,18 @@ jobs:
 
         mkdir uploadme
         mv  inno/installers/windows/Output/mysetup.exe "uploadme/monero-gui-install-win-x64-${TAG}.exe"
-    - name: Print hash
+    - id: hashwine
       run: |
-        sha256sum uploadme/*
+        cd uploadme
+        sha256sum *
+        hash=$(sha256sum *)
+        echo "::set-output name=hashwine::$hash"
 
   packageWindows:
     runs-on: windows-2019
+    outputs:
+      output1: ${{ steps.win.outputs.hashexe }}
+      output2: ${{ steps.win.outputs.hashzip }}
     steps:
     - uses: actions/checkout@v2
 
@@ -338,10 +346,19 @@ jobs:
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
         
         sha256sum uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
-    - name: "Print hashes"
+    - id: hashexe
       run: |
         cd uploadme
         sha256sum *
+        hash=$(sha256sum *.exe)
+        echo "::set-output name=hashexe::$hash"
+
+    - id: hashzip
+      run: |
+        cd uploadme
+        sha256sum *
+        hash=$(sha256sum *.zip)
+        echo "::set-output name=hashzip::$hash"
     - name: "Upload files using SCP"
       run: |
         Install-Module -Name Posh-SSH -force
@@ -442,15 +459,20 @@ jobs:
       run: |
         cd uploadme
         sha256sum *
-        hash=$(sha256sum -z *)
-        echo "::set-output name=hash::${hash}"
+        hash=$(sha256sum *)
+        echo "::set-output name=hash::$hash"
 
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
       run: |
         cd uploadme
         scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
   Report:
+    name: Print hashes
     runs-on: ubuntu-latest
-    needs: packageLinux
+    needs: [ packageLinux, packageWindows, MakeExeWINE]
     steps:
-      - run: echo ${{needs.packageLinux.outputs.output1}}
+      - run: |
+          echo ${{needs.packageLinux.outputs.output1}}
+          echo ${{needs.packageWindows.outputs.output1}}
+          echo ${{needs.packageWindows.outputs.output1}}
+          echo ${{needs.MakeExeWINE.outputs.output1}}
