@@ -98,13 +98,11 @@ jobs:
         cp frombuild/monero-wallet-gui.exe "${dest}/"
         cp utils/opengl32sw.dll "${dest}/"
         cp start-low-graphics-mode.bat "${dest}/"
-        echo "233444"
         ls ${HEAD}
         for f in "${HEAD}/*"; do
           echo "$f"
           cp $f "dummy/monero-gui-${TAG}/extras"
         done
-        echo "reeeee"
         dest="dummy/monero-gui-${TAG}"
         mkdir inno; cd inno
         git init
@@ -172,10 +170,10 @@ jobs:
         ls -la inno/installers/windows/*
         wine inno/installers/windows/ISCC.exe inno/installers/windows/Monero.iss
 
-
         mkdir uploadme
         mv  inno/installers/windows/Output/mysetup.exe "uploadme/monero-gui-install-win-x64-${TAG}.exe"
-
+    - name: Print hash
+      run: |
         sha256sum uploadme/*
 
   packageWindows:
