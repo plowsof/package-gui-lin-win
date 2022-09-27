@@ -360,7 +360,7 @@ jobs:
         
   
   packageLinux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - name: Download docker-linux-static from Monero-GUI build.yml
@@ -374,9 +374,6 @@ jobs:
 
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
-          tar --version
-          sudo apt-get update
-          sudo apt-get install -y tar
           tar --version
           TAG=${{ github.event.inputs.tag }}
 
