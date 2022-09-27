@@ -374,6 +374,10 @@ jobs:
 
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
+          tar --version
+          sudo apt-get update
+          sudo apt-get install -y tar
+          tar --version
           TAG=${{ github.event.inputs.tag }}
 
           wget -q "https://gui.xmr.pm/files/cli/${TAG}/monero-linux-x64-${TAG}.tar.bz2"
