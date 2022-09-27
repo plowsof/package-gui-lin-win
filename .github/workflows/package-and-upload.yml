@@ -346,17 +346,18 @@ jobs:
         Compress-Archive -Path .\dummy\* -DestinationPath uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
         
         sha256sum uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip
-    - id: hashexe
+    - name: Exe hash
+      id: hashexe
       run: |
         cd uploadme
-        hash=$(sha256sum *.exe)
+        hash=$(sha256sum *.exe | sed 's/*//')
         echo "::set-output name=hashexe::$hash"
       shell: bash
-
-    - id: hashzip
+    - name: Zip hash
+      id: hashzip
       run: |
         cd uploadme
-        hash=$(sha256sum *.zip)
+        hash=$(sha256sum *.zip | sed 's/*//')
         echo "::set-output name=hashzip::$hash"
       shell: bash
     - name: "Upload files using SCP"
