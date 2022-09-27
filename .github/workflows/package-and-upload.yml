@@ -33,6 +33,7 @@ jobs:
 
   MakeExeWINE:
     runs-on: ubuntu-20.04
+    needs: GetTag
     outputs:
       output1: ${{ steps.win.outputs.hashwine }}
     steps:
@@ -50,7 +51,7 @@ jobs:
         sudo apt-get install -y jq curl
         RUN_ID=${{ github.event.inputs.guifile }}
         GH_KEY="${{ secrets.GITHUB_TOKEN }}"
-        
+        TAG=${{needs.GetTag.outputs.output1}}
         # Download docker-windows-static
         download_artifact(){ run_id=$1 get_name=$2 save_as=$3 gh_key=$4
           workflow_run=$(curl \
@@ -60,7 +61,7 @@ jobs:
           for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
             if [[ "${artifact_name}" == "${get_name}" ]]; then
               URL=$(echo ${workflow_run} | jq -r ".artifacts[${num}].archive_download_url")
-              TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
+              #TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
               echo "DONE"
               break
             fi
