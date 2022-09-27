@@ -496,9 +496,9 @@ jobs:
     steps:
       - name: Print and compare WIN/LIN exe hashes
         run: |
-          echo $(echo ${{needs.packageWindows.outputs.output1}} | sed 's/ /  /g')
+          echo "${{needs.packageWindows.outputs.output1}}" | sed 's/ /  /g'
           echo "${{needs.packageLinux.outputs.output1}}"
-          echo $(echo ${{needs.packageWindows.outputs.output2}} | sed 's/ /  /g')
+          echo "${{needs.packageWindows.outputs.output2}}" | sed 's/ /  /g'
           #echo "${{needs.MakeExeWINE.outputs.output1}}"
 
           wine="$(echo \"${{needs.MakeExeWINE.outputs.output1}}\" | sed 's/ //g')"
