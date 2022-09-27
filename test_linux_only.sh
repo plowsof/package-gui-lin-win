@@ -1,16 +1,5 @@
 RUN_ID="3078884796"
 GH_KEY="hunter2"
-rm -rf clifiles
-rm -rf inno
-rm -rf dummy
-rm -rf uploadme
-rm -rf frombuild
-rm start-low-graphics-mode.bat
-rm monero-wallet-gui.AppImage
-rm docker-windows-static
-rm *pdf
-rm *.zip
-rm *.bz2
 
 # Download docker-windows-static
 download_artifact(){ run_id=$1 get_name=$2 save_as=$3 gh_key=$4
@@ -91,10 +80,37 @@ strip_v="${TAG:1}"
 inno_file='inno/installers/windows/Monero.iss'
 # mistake in v0.18.1.1. to reproduce hash use line 13
 # -e '13 cTouchDate=none \nTouchTime=none' \
+lines="$(cat $inno_file)"
+SAVEIFS=$IFS
+IFS=$'\n'
+lines=($lines)
+IFS=$SAVEIFS
+num=1
+setup="[Setup]"
+define="#define GuiVersion GetFileVersion(\"bin\monero-wallet-gui.exe\")"
+readme="Source: {#file AddBackslash(SourcePath) + \"ReadMe.htm\"}; DestDir: \"{app}\"; DestName: \"ReadMe.htm\"; Flags: ignoreversion"
+
+for line in "${lines[@]}"; do
+    if [[ "$line" = "$setup"* ]] ; then
+      echo "we found setup $num"
+      setup=$num
+    elif [[ "$line" = "$define"* ]] ; then
+      echo "we found define $num"
+      define=$num
+    elif [[ "$line" = "$readme"* ]] ; then
+      echo "we found readme $num"
+      readme=$num
+      sed -i "${readme} cSource: \"ReadMe.htm\"; DestDir: \"{app}\"; Flags: ignoreversion" ${inno_file}
+    fi
+    ((num+=1))
+done
+
 sed -i \
--e "4 c#define GuiVersion \"${strip_v}\"" \
--e '11 cTouchDate=none \nTouchTime=none' \
--e '74 cSource: "ReadMe.htm"; DestDir: "{app}"; Flags: ignoreversion' ${inno_file}
+-e "${define} c#define GuiVersion \"${strip_v}\"" \
+-e "${setup} c\[Setup\] \nTouchDate=none \nTouchTime=none" ${inno_file}
+
+#cat $inno_file
+
 for f in "utils/*"; do
   cp $f "inno/installers/windows"
 done
@@ -107,7 +123,6 @@ stamp=$(stat -c '%y' frombuild/monero-wallet-gui.exe)
 echo "offset is $offset"
 corrected_stamp=$(date -d"${stamp} ${offset} hours" +"%Y%m%d%H%M.%S")
 
-echo "The timestamp is ${corrected_stamp}\n**************************"
 for f in "inno/installers/windows/*" "inno/installers/windows/**/*" "inno/installers/windows/**/**/*"; do
   echo $f
   touch -t "${corrected_stamp}" $f
