@@ -472,7 +472,14 @@ jobs:
     needs: [ packageLinux, packageWindows, MakeExeWINE]
     steps:
       - run: |
+          echo ${{needs.packageWindows.outputs.output1}}
           echo ${{needs.packageLinux.outputs.output1}}
-          echo ${{needs.packageWindows.outputs.output1}}
-          echo ${{needs.packageWindows.outputs.output1}}
+          echo ${{needs.packageWindows.outputs.output2}}
           echo ${{needs.MakeExeWINE.outputs.output1}}
+
+          wine=${{needs.MakeExeWINE.outputs.output1}}
+          win=${{needs.packageWindows.outputs.output1}}
+
+          if [[ "${wine}" != "${win}" ]] ; then
+            exit 1
+          fi
