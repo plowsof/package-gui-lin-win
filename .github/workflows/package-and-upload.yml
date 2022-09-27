@@ -481,9 +481,11 @@ jobs:
           echo "${{needs.packageWindows.outputs.output2}}"
           echo "${{needs.MakeExeWINE.outputs.output1}}"
 
-          wine="echo ${{needs.MakeExeWINE.outputs.output1}} | sed 's/ //g"
-          win="${{needs.packageWindows.outputs.output1}} | sed 's/ //g'"
+          wine="$(echo \"${{needs.MakeExeWINE.outputs.output1}}\" | sed 's/ //g')"
+          win="$(echo \"${{needs.packageWindows.outputs.output1}}\" | sed 's/ //g')"
 
           if [[ "${wine}" != "${win}" ]] ; then
             exit 1
+          else
+            echo "🍻 Hashes match 🍻"
           fi
