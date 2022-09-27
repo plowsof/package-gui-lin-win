@@ -355,10 +355,10 @@ jobs:
         Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-install-win-x64-${{ github.event.inputs.tag }}.exe -Destination ${{ github.event.inputs.remotedir }} -Verbose
         Set-SCPItem -ComputerName $computer -KeyString $keystring -AcceptKey -Credential $credential -Path  .\uploadme\monero-gui-win-x64-${{ github.event.inputs.tag }}.zip -Destination ${{ github.event.inputs.remotedir }} -Verbose
 
-        
-  
   packageLinux:
     runs-on: ubuntu-22.04
+    outputs:
+      output1: ${{ steps.linux.outputs.hash }}
     steps:
     - uses: actions/checkout@v2
     - name: Download docker-linux-static from Monero-GUI build.yml
@@ -439,10 +439,19 @@ jobs:
           
           #scp does not allow "."
     - name: "Print hashes"
+    - id: linux
       run: |
         cd uploadme
         sha256sum *
+        hash=$(sha256sum -z *)
+        echo "::set-output name=hash::$hash"
+
     - name: "Upload monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2"
       run: |
         cd uploadme
         scp -i ../ssh_key -o StrictHostKeyChecking=no monero-gui-linux-x64-${{ github.event.inputs.tag }}.tar.bz2 ${{ secrets.USER }}@${{ secrets.SCP_SERVER }}:${{ github.event.inputs.remotedir }}
+  Report:
+    runs-on: ubuntu-latest
+    needs: [ packageLinux ]
+    steps:
+      - run: echo ${{needs.packageLinux.outputs.output1}}
