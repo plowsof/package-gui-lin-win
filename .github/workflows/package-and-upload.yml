@@ -23,7 +23,7 @@ jobs:
     - name: Grab tag from runid (comfy)
       id: tag
       run: |
-        run_id="${{ github.event.inputs.guifile }}""
+        run_id="${{ github.event.inputs.guifile }}"
         workflow_run=$(curl \
           -H "Accept: application/vnd.github+json" \
           https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
