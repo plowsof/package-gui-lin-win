@@ -349,14 +349,12 @@ jobs:
     - id: hashexe
       run: |
         cd uploadme
-        sha256sum *
         hash=$(sha256sum *.exe)
         echo "::set-output name=hashexe::$hash"
 
     - id: hashzip
       run: |
         cd uploadme
-        sha256sum *
         hash=$(sha256sum *.zip)
         echo "::set-output name=hashzip::$hash"
     - name: "Upload files using SCP"
@@ -458,7 +456,6 @@ jobs:
     - id: linux
       run: |
         cd uploadme
-        sha256sum *
         hash=$(sha256sum *)
         echo "::set-output name=hash::$hash"
 
