@@ -463,12 +463,11 @@ jobs:
           mkdir uploadme
           cd dummy
           echo "MTIME_GUI = ${MTIME_GUI}"
-          TZ=UTC tar --sort=name \
-            --mtime="${MTIME_GUI}" \
-            --owner=0 --group=0 --numeric-owner \
-            -cf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
-          cp monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
-          cd ..
+          tar --format=posix \
+                 --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime,delete=mtime \
+                 --mtime="${MTIME_GUI}" \
+                 --sort=name \
+                 -cvf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
           
           ls uploadme/*
           
