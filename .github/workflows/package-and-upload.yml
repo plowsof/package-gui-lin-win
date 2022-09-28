@@ -463,10 +463,9 @@ jobs:
           mkdir uploadme
           cd dummy
           echo "MTIME_GUI = ${MTIME_GUI}"
-          TZ=UTC tar --sort=name \
-            --mtime="${MTIME_GUI}" \
-            --owner=0 --group=0 --numeric-owner \
-            -cf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
+          
+          GZIP=-n tar --sort=name --mtime="${MTIME_GUI}" -cvjSf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
+
           cp monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
           cd ..
           
