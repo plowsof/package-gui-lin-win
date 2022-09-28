@@ -467,8 +467,9 @@ jobs:
                  --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime,delete=mtime \
                  --mtime="${MTIME_GUI}" \
                  --sort=name \
-                 -cvf monero-gui-linux-x64-${TAG}.tar.bz2 monero-gui-${TAG}
+                 -cvf monero-gui-linux-x64-${TAG}.tar.bz2 ../uploadme/.
           
+          cd ..
           ls uploadme/*
           
           echo "${{ secrets.SSH_KEY }}" | tee ssh_key
