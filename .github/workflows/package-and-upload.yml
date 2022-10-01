@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       output1: ${{ steps.tag.outputs.thetag }}
-      output2: ${{ setps.tag.outputs.theid }}
+      output2: ${{ steps.tag.outputs.theid }}
     steps:
     - name: Grab tag from runid (comfy)
       id: tag
