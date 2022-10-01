@@ -47,8 +47,6 @@ jobs:
         get_workflow_runs 1
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "tag: ${TAG}" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "runid: ${RUNID}" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "::set-output name=theid::$RUNID"
