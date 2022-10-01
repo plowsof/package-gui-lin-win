@@ -29,6 +29,7 @@ jobs:
             }
             if [[ $(_jq '.path') = ".github/workflows/build.yml" ]]; then 
                 TAG=$(_jq '.head_branch')
+                echo $TAG
                 is_v=${tag:0:1}
                 if [[ $is_v = "v" ]]; then
                     RUNID=$(_jq '.id')
