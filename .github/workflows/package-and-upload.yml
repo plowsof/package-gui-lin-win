@@ -45,7 +45,8 @@ jobs:
         }
 
         get_workflow_runs 1
-        
+        echo "### Packaging TAG $TAG" >> $GITHUB_STEP_SUMMARY
+        echo "### Run id: $RUNID" >> $GITHUB_STEP_SUMMARY
         echo "::set-output name=theid::$RUNID"
         echo "::set-output name=thetag::$TAG"
 
