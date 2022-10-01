@@ -1,10 +1,6 @@
 on: 
   workflow_dispatch:
     inputs:
-      guifile:
-        description: 'run id'     
-        required: true
-        default: "3147123066"
       remotedir:
         description: 'remote dir'
         required: true
@@ -15,20 +11,42 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       output1: ${{ steps.tag.outputs.thetag }}
+      output2: ${{ steps.tag.outputs.theid }}
     steps:
     - name: Grab tag from runid (comfy)
       id: tag
       run: |
-        run_id="${{ github.event.inputs.guifile }}"
-        workflow_run=$(curl \
+        get_workflow_runs(){ page=$1 
+        FOUND_BIN=0
+        runs=$(curl \
           -H "Accept: application/vnd.github+json" \
-          https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
-        num=0
-        for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
-            TAG=$(echo ${workflow_run} | jq -r ".artifacts[${num}].workflow_run.head_branch")
-            break
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/monero-project/monero-gui/actions/runs?page=$page)
+
+        for row in $(echo "${runs}" | jq -r '.workflow_runs[] | @base64'); do
+            _jq() {
+             echo ${row} | base64 --decode | jq -r ${1}
+            }
+            if [[ $(_jq '.path') = ".github/workflows/build.yml" ]]; then 
+                TAG=$(_jq '.head_branch')
+                echo $TAG
+                is_v=${TAG:0:1}
+                if [[ $is_v = "v" ]]; then
+                    RUNID=$(_jq '.id')
+                    FOUND_BIN=1
+                    break
+                fi
+            fi
         done
-        echo $TAG
+        if [[ $FOUND_BIN -eq 0 ]]; then
+            ((page+=1))
+            get_workflow_runs $page
+        fi
+        }
+
+        get_workflow_runs 1
+        
+        echo "::set-output name=theid::$RUNID"
         echo "::set-output name=thetag::$TAG"
 
   MakeExeWINE:
@@ -49,7 +67,7 @@ jobs:
     - name: "Everything"
       run: |
         sudo apt-get install -y jq curl
-        RUN_ID=${{ github.event.inputs.guifile }}
+        RUN_ID=${{ needs.GetTag.outputs.output2 }}
         GH_KEY="${{ secrets.GITHUB_TOKEN }}"
         TAG=${{needs.GetTag.outputs.output1}}
         # Download docker-windows-static
@@ -212,7 +230,7 @@ jobs:
       with:
         workflow: build.yml
         workflow_conclusion: success
-        run_id: ${{ github.event.inputs.guifile }}
+        run_id: ${{ needs.GetTag.outputs.output2 }}
         repo: monero-project/monero-gui
         name: docker-windows-static
         path: frombuild
@@ -405,7 +423,7 @@ jobs:
       with:
         workflow: build.yml
         workflow_conclusion: success
-        run_id: ${{ github.event.inputs.guifile }}
+        run_id: ${{ needs.GetTag.outputs.output2 }}
         repo: monero-project/monero-gui
         name: docker-linux-static
 
