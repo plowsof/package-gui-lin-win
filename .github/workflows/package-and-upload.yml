@@ -516,7 +516,7 @@ jobs:
         run: |
           runid=${{ needs.GetTag.outputs.output2 }}
           tag=${{ needs.GetTag.outputs.output1 }}
-          echo "###Packaging TAG $tag" >> $GITHUB_STEP_SUMMARY
+          echo "### Hashes" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "${{needs.packageWindows.outputs.output1}}" | sed 's/ /  /g' >> $GITHUB_STEP_SUMMARY
           echo "${{needs.packageLinux.outputs.output1}}" >> $GITHUB_STEP_SUMMARY
