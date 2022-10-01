@@ -20,6 +20,7 @@ jobs:
         FOUND_BIN=0
         runs=$(curl \
           -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           https://api.github.com/repos/monero-project/monero-gui/actions/runs?page=$page)
 
         for row in $(echo "${runs}" | jq -r '.workflow_runs[] | @base64'); do
