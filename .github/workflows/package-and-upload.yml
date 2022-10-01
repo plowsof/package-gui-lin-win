@@ -513,16 +513,21 @@ jobs:
     steps:
       - name: Print and compare WIN/LIN exe hashes
         run: |
-          echo "${{needs.packageWindows.outputs.output1}}" | sed 's/ /  /g'
-          echo "${{needs.packageLinux.outputs.output1}}"
-          echo "${{needs.packageWindows.outputs.output2}}" | sed 's/ /  /g'
-          #echo "${{needs.MakeExeWINE.outputs.output1}}"
+          runid=${{ needs.GetTag.outputs.output2 }}
+          tag=${{ needs.GetTag.outputs.output1 }}
+          echo "###Packaging TAG $tag" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{needs.packageWindows.outputs.output1}}" | sed 's/ /  /g' >> $GITHUB_STEP_SUMMARY
+          echo "${{needs.packageLinux.outputs.output1}}" >> $GITHUB_STEP_SUMMARY
+          echo "${{needs.packageWindows.outputs.output2}}" | sed 's/ /  /g' >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`"
 
           wine="$(echo \"${{needs.MakeExeWINE.outputs.output1}}\" | sed 's/ //g')"
           win="$(echo \"${{needs.packageWindows.outputs.output1}}\" | sed 's/ //g')"
 
           if [[ "${wine}" != "${win}" ]] ; then
+            echo "Hashes do not match ;_;" >> $GITHUB_STEP_SUMMARY
             exit 1
           else
-            echo "🍻 Hashes match 🍻"
+            echo "🍻 Hashes match 🍻" >> $GITHUB_STEP_SUMMARY
           fi
