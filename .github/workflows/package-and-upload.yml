@@ -12,53 +12,70 @@ jobs:
     outputs:
       output1: ${{ steps.tag.outputs.thetag }}
       output2: ${{ steps.tag.outputs.theid }}
+      output3: ${{ steps.tag.outputs.gitian }}
     steps:
     - name: Grab tag from runid (comfy)
       id: tag
       run: |
-        get_workflow_runs(){ page=$1 
+        get_workflow_runs(){ page=$1 repo=$2 workflow=$3
         FOUND_BIN=0
         runs=$(curl \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/monero-project/monero-gui/actions/runs?page=$page)
+          https://api.github.com/repos/monero-project/${repo}/actions/runs?page=$page)
 
         for row in $(echo "${runs}" | jq -r '.workflow_runs[] | @base64'); do
             _jq() {
              echo ${row} | base64 --decode | jq -r ${1}
             }
-            if [[ $(_jq '.path') = ".github/workflows/build.yml" ]]; then 
+            if [[ $(_jq '.path') = ".github/workflows/$workflow" ]]; then 
                 TAG=$(_jq '.head_branch')
                 echo $TAG
                 is_v=${TAG:0:1}
-                if [[ $is_v = "v" ]]; then
+                is_p=${TAG:0:9}
+                IFS='.' read -ra SPLIT <<< "$TAG"
+                if [[ $is_v = "v" ]] || [[ $is_p = "prepare-v" ]] && [[ ${#SPLIT[@]} -eq 4 ]]; then
                     RUNID=$(_jq '.id')
                     FOUND_BIN=1
+                    if [[ $is_p = "prepare-v" ]]; then
+                        TAG="${TAG/prepare-v/v}"
+                        PREPARE=1
+                    fi   
                     break
                 fi
             fi
         done
         if [[ $FOUND_BIN -eq 0 ]]; then
             ((page+=1))
-            get_workflow_runs $page
+            get_workflow_runs $page $repo $workflow
+        else
+            FOUND_BIN=0
         fi
         }
 
-        get_workflow_runs 1
+        get_workflow_runs 1 monero-gui build.yml
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "tag: ${TAG}" >> $GITHUB_STEP_SUMMARY
         echo "runid: ${RUNID}" >> $GITHUB_STEP_SUMMARY
+        echo "thetag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "theid=$RUNID" >> "$GITHUB_OUTPUT"
+
+        get_workflow_runs 1 monero gitian.yml
+        echo "gitian=$RUNID" >> "$GITHUB_OUTPUT"
+        echo "gitian runid: ${RUNID}" >> $GITHUB_STEP_SUMMARY
+        if [[ $PREPARE = 1 ]]; then
+            echo "Caution: this is a build-prepare not official release" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "::set-output name=theid::$RUNID"
-        echo "::set-output name=thetag::$TAG"
 
   MakeExeWINE:
     runs-on: ubuntu-20.04
     needs: GetTag
     outputs:
       output1: ${{ steps.win.outputs.hashwine }}
+      output2: ${{ steps.win.outputs.hashgit }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up dependencies
       run: |
         sudo apt-add-repository -y ppa:ondrej/php
@@ -71,13 +88,14 @@ jobs:
       run: |
         sudo apt-get install -y jq curl
         RUN_ID=${{ needs.GetTag.outputs.output2 }}
+        GITIAN_ID=${{ needs.GetTag.outputs.output3 }}
         GH_KEY="${{ secrets.GITHUB_TOKEN }}"
         TAG=${{needs.GetTag.outputs.output1}}
         # Download docker-windows-static
-        download_artifact(){ run_id=$1 get_name=$2 save_as=$3 gh_key=$4
+        download_artifact(){ run_id=$1 repo=$2 get_name=$3 save_as=$4 gh_key=$5
           workflow_run=$(curl \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/monero-project/monero-gui/actions/runs/${run_id}/artifacts)
+            https://api.github.com/repos/monero-project/${repo}/actions/runs/${run_id}/artifacts)
           num=0
           for artifact_name in $(echo ${workflow_run} | jq -r '.artifacts[].name'); do
             if [[ "${artifact_name}" == "${get_name}" ]]; then
@@ -96,17 +114,17 @@ jobs:
           echo $URL
         }
 
-        download_artifact $RUN_ID "docker-windows-static" "docker-windows-static" "${GH_KEY}"
-
+        download_artifact $RUN_ID monero-gui "docker-windows-static" "docker-windows-static" "${GH_KEY}"
+        download_artifact $GITIAN_ID monero "Windows" "Windows" "${GH_KEY}"
         #Extract static files to frombuild
         unzip "docker-windows-static" -d frombuild
+        #Extract gitian files
+        unzip "Windows" 
+        unzip "monero-x86_64-w64-mingw32-${TAG}.zip" -d clifiles
 
         # Download CLI/PDF file(s)
 
-        wget -q "https://gui.xmr.pm/files/cli/${TAG}/monero-win-x64-${TAG}.zip" 
         wget -q "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf" 
-
-        unzip "monero-win-x64-${TAG}.zip" -d clifiles
 
         # Create lowgfx bat file with heredoc
         cr=$'\r'
@@ -217,7 +235,10 @@ jobs:
         cd uploadme
         sha256sum *
         hash=$(sha256sum *)
-        echo "::set-output name=hashwine::$hash"
+        echo "hashwine=$hash" >> "$GITHUB_OUTPUT"
+        gitian_hash=$(sha256sum ../monero-x86_64-w64-mingw32-${{needs.GetTag.outputs.output1}}.zip)
+        echo $gitian_hash
+        echo "hashgit=$gitian_hash" >> "$GITHUB_OUTPUT"
 
   packageWindows:
     runs-on: windows-2019
@@ -226,7 +247,7 @@ jobs:
       output1: ${{ steps.hashexe.outputs.hashexe }}
       output2: ${{ steps.hashzip.outputs.hashzip }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Download docker-windows-static from Monero-GUI build.yml
       uses: dawidd6/action-download-artifact@v2.21.1
@@ -237,6 +258,16 @@ jobs:
         repo: monero-project/monero-gui
         name: docker-windows-static
         path: frombuild
+
+    - name: Download Windows gitian files from gitian.yml
+      uses: dawidd6/action-download-artifact@v2.21.1
+      with:
+        workflow: gitian.yml
+        workflow_conclusion: success
+        run_id: ${{ needs.GetTag.outputs.output3 }}
+        repo: monero-project/monero
+        name: Windows
+        path: gitian
 
     - name: "Verify Inno Setup file hashes"
       run: |
@@ -256,9 +287,8 @@ jobs:
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
           $TAG = "${{needs.GetTag.outputs.output1}}"
-          Invoke-WebRequest -Uri "https://gui.xmr.pm/files/cli/$($TAG)/monero-win-x64-$($TAG).zip" -OutFile "monero-win-x64-$($TAG).zip"
           Invoke-WebRequest -Uri "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf" -OutFile "monero-gui-wallet-guide.pdf"
-          Expand-Archive -Path monero-win-x64-$($TAG).zip -DestinationPath clifiles
+          Expand-Archive -Path gitian\monero-x86_64-w64-mingw32-${TAG}.zip -DestinationPath clifiles
           
     - name: "Create lowgfx bat file"
       run: |
@@ -391,7 +421,7 @@ jobs:
         cd uploadme
         echo "$(sha256sum *.exe | sed 's/*//')"
         hash=$(sha256sum *.exe | sed 's/*//')
-        echo "::set-output name=hashexe::$hash"
+        echo "hashexe=$hash" >> "$GITHUB_OUTPUT"
       shell: bash
     - name: Zip hash
       id: hashzip
@@ -399,7 +429,7 @@ jobs:
         cd uploadme
         echo "$(sha256sum *.zip | sed 's/*//')"
         hash=$(sha256sum *.zip | sed 's/*//')
-        echo "::set-output name=hashzip::$hash"
+        echo "hashzip=$hash" >> "$GITHUB_OUTPUT"
       shell: bash
     - name: "Upload files using SCP"
       run: |
@@ -419,8 +449,9 @@ jobs:
     needs: GetTag
     outputs:
       output1: ${{ steps.linux.outputs.hash }}
+      output2: ${{ steps.linux.outputs.hashgit }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Download docker-linux-static from Monero-GUI build.yml
       uses: dawidd6/action-download-artifact@v2.21.1
       with:
@@ -430,12 +461,19 @@ jobs:
         repo: monero-project/monero-gui
         name: docker-linux-static
 
-    - name: "Download + Extract CLI Files / PDF guide"
+    - name: Download Limix gitian files from Monero gitian.yml
+      uses: dawidd6/action-download-artifact@v2.21.1
+      with:
+        workflow: gitian.yml
+        workflow_conclusion: success
+        run_id: ${{ needs.GetTag.outputs.output3 }}
+        repo: monero-project/monero
+        name: Linux
+
+    - name: "Download PDF guide"
       run: |
           tar --version
           TAG=${{needs.GetTag.outputs.output1}}
-
-          wget -q "https://gui.xmr.pm/files/cli/${TAG}/monero-linux-x64-${TAG}.tar.bz2"
           wget -q "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf"
     - name: "Create appimage file"
       run: |
@@ -450,7 +488,8 @@ jobs:
     - name: "Extract CLI files"
       run: |
           TAG=${{needs.GetTag.outputs.output1}}
-          tar -xvf "monero-linux-x64-${TAG}.tar.bz2"
+          ls -la
+          tar -xvf "monero-x86_64-linux-gnu-${TAG}.tar.bz2"
 
     - name: "Prepare / move files for packaging"
       run: |
@@ -503,7 +542,10 @@ jobs:
         cd uploadme
         sha256sum *
         hash=$(sha256sum *)
-        echo "::set-output name=hash::$hash"
+        echo "hash=$hash" >> "$GITHUB_OUTPUT"
+        gitian_hash=$(sha256sum ../monero-x86_64-linux-gnu-${{needs.GetTag.outputs.output1}}.tar.bz2)
+        echo $gitian_hash
+        echo "hashgit=$gitian_hash" >> "$GITHUB_OUTPUT"
 
     - name: "Upload monero-gui-linux-x64-${{needs.GetTag.outputs.output1}}.tar.bz2"
       run: |
@@ -518,6 +560,12 @@ jobs:
         run: |
           runid=${{ needs.GetTag.outputs.output2 }}
           tag=${{ needs.GetTag.outputs.output1 }}
+          echo "Win/Lin Gitian files used:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{needs.packageLinux.outputs.output2}}" >> $GITHUB_STEP_SUMMARY
+          echo "${{needs.MakeExeWINE.outputs.output2}}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Packaged files and installer hashes:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "${{needs.packageWindows.outputs.output1}}" | sed 's/ /  /g' >> $GITHUB_STEP_SUMMARY
           echo "${{needs.packageLinux.outputs.output1}}" >> $GITHUB_STEP_SUMMARY
