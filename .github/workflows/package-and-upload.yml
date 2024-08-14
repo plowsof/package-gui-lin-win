@@ -75,7 +75,7 @@ jobs:
       output1: ${{ steps.win.outputs.hashwine }}
       output2: ${{ steps.win.outputs.hashgit }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up dependencies
       run: |
         sudo apt-add-repository -y ppa:ondrej/php
@@ -247,10 +247,10 @@ jobs:
       output1: ${{ steps.hashexe.outputs.hashexe }}
       output2: ${{ steps.hashzip.outputs.hashzip }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Download docker-windows-static from Monero-GUI build.yml
-      uses: dawidd6/action-download-artifact@v2.21.1
+      uses: dawidd6/action-download-artifact@v4
       with:
         workflow: build.yml
         workflow_conclusion: success
@@ -260,7 +260,7 @@ jobs:
         path: frombuild
 
     - name: Download Windows gitian files from gitian.yml
-      uses: dawidd6/action-download-artifact@v2.21.1
+      uses: dawidd6/action-download-artifact@v4
       with:
         workflow: gitian.yml
         workflow_conclusion: success
@@ -451,9 +451,9 @@ jobs:
       output1: ${{ steps.linux.outputs.hash }}
       output2: ${{ steps.linux.outputs.hashgit }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Download docker-linux-static from Monero-GUI build.yml
-      uses: dawidd6/action-download-artifact@v2.21.1
+      uses: dawidd6/action-download-artifact@v4
       with:
         workflow: build.yml
         workflow_conclusion: success
@@ -462,7 +462,7 @@ jobs:
         name: docker-linux-static
 
     - name: Download Limix gitian files from Monero gitian.yml
-      uses: dawidd6/action-download-artifact@v2.21.1
+      uses: dawidd6/action-download-artifact@v4
       with:
         workflow: gitian.yml
         workflow_conclusion: success
