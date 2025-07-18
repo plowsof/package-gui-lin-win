@@ -241,7 +241,7 @@ jobs:
         echo "hashgit=$gitian_hash" >> "$GITHUB_OUTPUT"
 
   packageWindows:
-    runs-on: windows-2019
+    runs-on: windows-2025
     needs: GetTag
     outputs:
       output1: ${{ steps.hashexe.outputs.hashexe }}
