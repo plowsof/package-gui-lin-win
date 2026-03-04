@@ -13,6 +13,7 @@ jobs:
       output1: ${{ steps.tag.outputs.thetag }}
       output2: ${{ steps.tag.outputs.theid }}
       output3: ${{ steps.tag.outputs.gitian }}
+      output4: ${{ steps.tag.outputs.clitag }}
     steps:
     - name: Grab tag from runid (comfy)
       id: tag
@@ -62,6 +63,7 @@ jobs:
 
         get_workflow_runs 1 monero gitian.yml
         echo "gitian=$RUNID" >> "$GITHUB_OUTPUT"
+        echo "clitag=$TAG" >> "$GITHUB_OUTPUT"
         echo "gitian runid: ${RUNID}" >> $GITHUB_STEP_SUMMARY
         if [[ $PREPARE = 1 ]]; then
             echo "Caution: this is a build-prepare not official release" >> $GITHUB_STEP_SUMMARY
@@ -91,6 +93,7 @@ jobs:
         GITIAN_ID=${{ needs.GetTag.outputs.output3 }}
         GH_KEY="${{ secrets.GITHUB_TOKEN }}"
         TAG=${{needs.GetTag.outputs.output1}}
+        CLITAG=${{needs.GetTag.outputs.output4}}
         # Download docker-windows-static
         download_artifact(){ run_id=$1 repo=$2 get_name=$3 save_as=$4 gh_key=$5
           workflow_run=$(curl \
@@ -120,7 +123,7 @@ jobs:
         unzip "docker-windows-static" -d frombuild
         #Extract gitian files
         unzip "Windows" 
-        unzip "monero-x86_64-w64-mingw32-${TAG}.zip" -d clifiles
+        unzip "monero-x86_64-w64-mingw32-${CLITAG}.zip" -d clifiles
 
         # Download CLI/PDF file(s)
 
@@ -137,7 +140,7 @@ jobs:
         EOF
         sha256sum start-low-graphics-mode.bat
         mkdir -p "dummy/monero-gui-${TAG}/extras"
-        HEAD="clifiles/monero-x86_64-w64-mingw32-${TAG}"
+        HEAD="clifiles/monero-x86_64-w64-mingw32-${CLITAG}"
         OUT="dummy/monero-gui-${TAG}"
 
         echo "HEAD is ${HEAD}"
@@ -236,7 +239,7 @@ jobs:
         sha256sum *
         hash=$(sha256sum *)
         echo "hashwine=$hash" >> "$GITHUB_OUTPUT"
-        gitian_hash=$(sha256sum ../monero-x86_64-w64-mingw32-${{needs.GetTag.outputs.output1}}.zip)
+        gitian_hash=$(sha256sum ../monero-x86_64-w64-mingw32-${{needs.GetTag.outputs.output4}}.zip)
         echo $gitian_hash
         echo "hashgit=$gitian_hash" >> "$GITHUB_OUTPUT"
 
@@ -286,7 +289,7 @@ jobs:
     
     - name: "Download + Extract CLI Files / PDF guide"
       run: |
-          $TAG = "${{needs.GetTag.outputs.output1}}"
+          $TAG = "${{needs.GetTag.outputs.output4}}"
           Invoke-WebRequest -Uri "https://github.com/monero-ecosystem/monero-GUI-guide/releases/download/v1.9/monero-gui-wallet-guide.pdf" -OutFile "monero-gui-wallet-guide.pdf"
           Expand-Archive -Path gitian\monero-x86_64-w64-mingw32-${TAG}.zip -DestinationPath clifiles
           
@@ -305,8 +308,9 @@ jobs:
     - name: "Prepare files for zipping"
       run: |
           $TAG = "${{needs.GetTag.outputs.output1}}"
+          $CLITAG = "${{needs.GetTag.outputs.output4}}"
           mkdir -p dummy\monero-gui-$($TAG)\extras
-          $HEAD = "clifiles\monero-x86_64-w64-mingw32-" + $TAG
+          $HEAD = "clifiles\monero-x86_64-w64-mingw32-" + $CLITAG
           $OUT = "dummy\monero-gui-" + $TAG
           
           $license = "$($HEAD)\LICENSE"
@@ -487,20 +491,21 @@ jobs:
           
     - name: "Extract CLI files"
       run: |
-          TAG=${{needs.GetTag.outputs.output1}}
+          TAG=${{needs.GetTag.outputs.output4}}
           ls -la
           tar -xvf "monero-x86_64-linux-gnu-${TAG}.tar.bz2"
 
     - name: "Prepare / move files for packaging"
       run: |
           TAG=${{needs.GetTag.outputs.output1}}
+          CLITAG=${{needs.GetTag.outputs.output4}}
           mkdir -p monero-gui-${TAG}/extras
           HEAD=monero-x86_64-linux-gnu-
-          mv ${HEAD}${TAG}/LICENSE monero-gui-${TAG}/.
-          mv ${HEAD}${TAG}/monerod monero-gui-${TAG}/.
+          mv ${HEAD}${CLITAG}/LICENSE monero-gui-${TAG}/.
+          mv ${HEAD}${CLITAG}/monerod monero-gui-${TAG}/.
 
-          rm ${HEAD}${TAG}/README.md
-          rm ${HEAD}${TAG}/ANONYMITY_NETWORKS.md
+          rm ${HEAD}${CLITAG}/README.md
+          rm ${HEAD}${CLITAG}/ANONYMITY_NETWORKS.md
 
           cp monero-gui-wallet-guide.pdf monero-gui-${TAG}/.
           cp monero-wallet-gui monero-gui-${TAG}/.
@@ -512,7 +517,7 @@ jobs:
           MTIME_GUI=$(date -d"${stamp} +0 hours" +"%Y-%m-%d %H:%M:%S")
           ls -la 
           echo "BEFORE CHMOD"
-          for filename in ${HEAD}${TAG}/*; do
+          for filename in ${HEAD}${CLITAG}/*; do
             chmod -R 755 ${filename} 
             mv ${filename} monero-gui-${TAG}/extras/. 
           done
@@ -543,7 +548,7 @@ jobs:
         sha256sum *
         hash=$(sha256sum *)
         echo "hash=$hash" >> "$GITHUB_OUTPUT"
-        gitian_hash=$(sha256sum ../monero-x86_64-linux-gnu-${{needs.GetTag.outputs.output1}}.tar.bz2)
+        gitian_hash=$(sha256sum ../monero-x86_64-linux-gnu-${{needs.GetTag.outputs.output4}}.tar.bz2)
         echo $gitian_hash
         echo "hashgit=$gitian_hash" >> "$GITHUB_OUTPUT"
 
